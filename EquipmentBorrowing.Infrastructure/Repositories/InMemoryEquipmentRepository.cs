@@ -9,17 +9,20 @@ namespace EquipmentBorrowing.Infrastructure.Repositories;
 
 public class InMemoryEquipmentRepository : IEquipmentRepository
 {
-    private readonly List<Equipment> _equipment = new();
-
-    public InMemoryEquipmentRepository()
+    private readonly List<Equipment> _equipment = new()
     {
-        _equipment.Add(new Equipment { Id = 1, Name = "Multimeter", IsAvailable = true });
-        _equipment.Add(new Equipment { Id = 2, Name = "Oscilloscope", IsAvailable = false });
-    }
+        new Equipment { Id = 1, Name = "Microscope", IsAvailable = true },
+        new Equipment { Id = 2, Name = "Soldering Iron", IsAvailable = true }
+    };
 
     public Task<Equipment?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
     {
         return Task.FromResult(_equipment.FirstOrDefault(e => e.Id == id));
+    }
+
+    public Task<IEnumerable<Equipment>> GetAllAsync(CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult<IEnumerable<Equipment>>(_equipment);
     }
 
     public Task UpdateAsync(Equipment equipment, CancellationToken cancellationToken = default)

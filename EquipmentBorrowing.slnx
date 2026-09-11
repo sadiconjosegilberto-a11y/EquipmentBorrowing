@@ -11,4 +11,5 @@
   <Folder Name="/tests/">
     <Project Path="EquipmentBorrowing.Tests/EquipmentBorrowing.Tests.csproj" />
   </Folder>
+  <Project Path="EquipmentBorrowing.Desktop/EquipmentBorrowing.Desktop.csproj" />
 </Solution>

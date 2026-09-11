@@ -1,0 +1,27 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:EquipmentBorrowing.Desktop.ViewModels"
+             x:DataType="vm:EquipmentViewModel"
+             x:Class="EquipmentBorrowing.Desktop.Views.EquipmentView">
+	<StackPanel Margin="20" Spacing="10">
+		<TextBlock Text="Available Equipment" FontSize="20" FontWeight="Bold"/>
+
+		<ListBox Height="200"
+                 ItemsSource="{Binding EquipmentList}"
+                 SelectedItem="{Binding SelectedEquipment}"
+                 Background="#f0f0f0" Margin="0,0,0,10">
+			<ListBox.ItemTemplate>
+				<DataTemplate>
+					<StackPanel Orientation="Horizontal" Spacing="10">
+						<TextBlock Text="{Binding Id}" />
+						<TextBlock Text="{Binding Name}" FontWeight="Bold" />
+						<TextBlock Text="{Binding IsAvailable, StringFormat='Available: {0}'}" />
+					</StackPanel>
+				</DataTemplate>
+			</ListBox.ItemTemplate>
+		</ListBox>
+
+		<TextBlock Text="{Binding StatusMessage}" Foreground="Red" FontWeight="Bold" />
+		<Button Content="Borrow Selected Equipment" Command="{Binding BorrowCommand}" HorizontalAlignment="Right"/>
+	</StackPanel>
+</UserControl>
