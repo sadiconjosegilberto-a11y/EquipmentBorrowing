@@ -9,12 +9,12 @@
 		<ListBox Height="200"
                  ItemsSource="{Binding ActiveBorrowings}"
                  SelectedItem="{Binding SelectedBorrowing}"
-                 Background="#f0f0f0" Margin="0,0,0,10">
+                 Margin="0,0,0,10">
 			<ListBox.ItemTemplate>
 				<DataTemplate>
 					<StackPanel Orientation="Horizontal" Spacing="10">
 						<TextBlock Text="{Binding Id, StringFormat='ID: {0}'}" />
-						<TextBlock Text="{Binding EquipmentId, StringFormat='Eq ID: {0}'}" FontWeight="Bold" />
+						<TextBlock Text="{Binding EquipmentName}" FontWeight="Bold" />
 						<TextBlock Text="{Binding Status}" />
 					</StackPanel>
 				</DataTemplate>

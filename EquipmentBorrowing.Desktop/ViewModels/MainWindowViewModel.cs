@@ -27,6 +27,7 @@ public partial class MainWindowViewModel : ObservableObject
     [RelayCommand]
     private void ShowBorrowings()
     {
+        _borrowingsViewModel.LoadActiveBorrowings();
         CurrentViewModel = _borrowingsViewModel;
     }
 }

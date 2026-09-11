@@ -9,25 +9,36 @@ using System.Threading.Tasks;
 
 namespace EquipmentBorrowing.Desktop.ViewModels;
 
+public class BorrowingDisplayModel
+{
+    public int Id { get; set; }
+    public int EquipmentId { get; set; }
+    public string EquipmentName { get; set; } = string.Empty;
+    public BorrowingStatus Status { get; set; }
+}
+
 public partial class BorrowingsViewModel : ObservableObject
 {
     private readonly IBorrowingRepository _borrowingRepository;
+    private readonly IEquipmentRepository _equipmentRepository;
     private readonly ReturnEquipmentService _returnEquipmentService;
 
     [ObservableProperty]
-    private ObservableCollection<Borrowing> activeBorrowings = new();
+    private ObservableCollection<BorrowingDisplayModel> activeBorrowings = new();
 
     [ObservableProperty]
-    private Borrowing? selectedBorrowing;
+    private BorrowingDisplayModel? selectedBorrowing;
 
     [ObservableProperty]
     private string? statusMessage;
 
     public BorrowingsViewModel(
         IBorrowingRepository borrowingRepository,
+        IEquipmentRepository equipmentRepository,
         ReturnEquipmentService returnEquipmentService)
     {
         _borrowingRepository = borrowingRepository;
+        _equipmentRepository = equipmentRepository;
         _returnEquipmentService = returnEquipmentService;
 
         LoadActiveBorrowings();
@@ -37,7 +48,21 @@ public partial class BorrowingsViewModel : ObservableObject
     {
         var allBorrowings = await _borrowingRepository.GetAllAsync();
         var active = allBorrowings.Where(b => b.Status == BorrowingStatus.Active);
-        ActiveBorrowings = new ObservableCollection<Borrowing>(active);
+
+        var displayList = new ObservableCollection<BorrowingDisplayModel>();
+        foreach (var borrowing in active)
+        {
+            var equipment = await _equipmentRepository.GetByIdAsync(borrowing.EquipmentId);
+            displayList.Add(new BorrowingDisplayModel
+            {
+                Id = borrowing.Id,
+                EquipmentId = borrowing.EquipmentId,
+                EquipmentName = equipment?.Name ?? "Unknown",
+                Status = borrowing.Status
+            });
+        }
+
+        ActiveBorrowings = displayList;
     }
 
     [RelayCommand]
