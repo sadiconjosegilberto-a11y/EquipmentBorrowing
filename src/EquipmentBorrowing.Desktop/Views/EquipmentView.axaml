@@ -1,0 +1,89 @@
+﻿<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:EquipmentBorrowing.Desktop.ViewModels"
+             x:DataType="vm:EquipmentViewModel">
+
+  <Grid RowDefinitions="*,Auto" Margin="16">
+
+    <Grid ColumnDefinitions="*,280" Margin="0 0 0 8">
+
+      <!-- Left: Equipment List -->
+      <DockPanel Grid.Column="0" Margin="0 0 12 0">
+        <TextBlock DockPanel.Dock="Top" Text="Available Equipment"
+                   Classes="SectionHeader" Margin="0 0 0 8"/>
+        <ListBox ItemsSource="{Binding EquipmentItems}"
+                 SelectedItem="{Binding SelectedEquipment}">
+          <ListBox.ItemTemplate>
+            <DataTemplate>
+              <Grid ColumnDefinitions="*,Auto" Margin="4">
+                <StackPanel Grid.Column="0">
+                  <TextBlock Text="{Binding Name}" Classes="ItemTitle"/>
+                  <TextBlock Text="{Binding Id, StringFormat='ID: {0}'}" Classes="ItemSubtitle"/>
+                </StackPanel>
+                <Border Grid.Column="1" VerticalAlignment="Center"
+                        Classes="StatusBadge"
+                        Classes.Available="{Binding IsAvailable}"
+                        Classes.Unavailable="{Binding !IsAvailable}">
+                  <Panel>
+                    <TextBlock Text="Available" Classes="BadgeText"
+                               IsVisible="{Binding IsAvailable}"/>
+                    <TextBlock Text="In Use" Classes="BadgeText"
+                               IsVisible="{Binding !IsAvailable}"/>
+                  </Panel>
+                </Border>
+              </Grid>
+            </DataTemplate>
+          </ListBox.ItemTemplate>
+        </ListBox>
+      </DockPanel>
+
+      <!-- Right: Borrow Form -->
+      <DockPanel Grid.Column="1">
+        <TextBlock DockPanel.Dock="Top" Text="Borrow Equipment"
+                   Classes="SectionHeader" Margin="0 0 0 8"/>
+        <StackPanel Spacing="12">
+
+          <StackPanel Spacing="4">
+            <TextBlock Text="Student" Classes="FormLabel"/>
+            <ComboBox ItemsSource="{Binding Students}"
+                      SelectedItem="{Binding SelectedStudent}"
+                      HorizontalAlignment="Stretch">
+              <ComboBox.ItemTemplate>
+                <DataTemplate>
+                  <TextBlock Text="{Binding Name}"/>
+                </DataTemplate>
+              </ComboBox.ItemTemplate>
+            </ComboBox>
+          </StackPanel>
+
+          <StackPanel Spacing="4">
+            <TextBlock Text="Selected Equipment" Classes="FormLabel"/>
+            <TextBlock Text="{Binding SelectedEquipment.Name, FallbackValue='None selected'}"
+                       Classes="FormValue"/>
+          </StackPanel>
+
+          <StackPanel Spacing="4">
+            <TextBlock Text="Expected Return Date" Classes="FormLabel"/>
+            <CalendarDatePicker SelectedDate="{Binding ExpectedReturnDate}"
+                                HorizontalAlignment="Stretch"/>
+          </StackPanel>
+
+          <Button Content="Borrow Equipment"
+                  Command="{Binding BorrowCommand}"
+                  Classes="PrimaryButton"
+                  HorizontalAlignment="Stretch"/>
+        </StackPanel>
+      </DockPanel>
+
+    </Grid>
+
+    <!-- Status Message -->
+    <Border Grid.Row="1" Classes="StatusBar"
+            Classes.Success="{Binding IsSuccess}"
+            Classes.Error="{Binding !IsSuccess}"
+            IsVisible="{Binding StatusMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+      <TextBlock Text="{Binding StatusMessage}" Classes="StatusText"/>
+    </Border>
+
+  </Grid>
+</UserControl>
