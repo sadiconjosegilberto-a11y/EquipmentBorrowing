@@ -3,176 +3,88 @@
 ## Laboratory Activity 1 — Domain and Application Layer
 
 ### Overview
-A layered .NET solution implementing a Campus Equipment Borrowing System. The architecture separates concerns across distinct projects:
+This project is a simple Campus Equipment Borrowing System built with layered architecture:
 
-| Project | Responsibility |
-|---|---|
-| `EquipmentBorrowing.Domain` | Core entities: `Student`, `Equipment`, `Borrowing`, `BorrowingStatus` |
-| `EquipmentBorrowing.Application` | Application services, repository interfaces |
-| `EquipmentBorrowing.Infrastructure` | In-memory repository implementations |
-| `EquipmentBorrowing.Console` | Simple console entry point (Lab 1) |
+- **EquipmentBorrowing.Domain**: Holds models (`Student`, `Equipment`, `Borrowing`, and `BorrowingStatus`).
+- **EquipmentBorrowing.Application**: Contains repository interfaces and services like `BorrowEquipmentService`.
+- **EquipmentBorrowing.Infrastructure**: In-memory repository storage.
+- **EquipmentBorrowing.Console**: Console test app from Lab 1.
 
-### Domain Models
-- **Student** — has an Id, Name, and `IsAllowedToBorrow` flag
-- **Equipment** — has an Id, Name, and `IsAvailable` flag with `MarkBorrowed()`/`MarkReturned()` methods
-- **Borrowing** — records a borrow event with student, equipment, dates, and status
-
-### Borrowing Rules (enforced in `BorrowEquipmentService`)
-1. Student must exist
-2. Student must be allowed to borrow
-3. Equipment must exist and be available
-4. Student must not have reached the maximum of 3 active borrowings
+### Borrowing Rules
+- The student must exist and have borrowing privileges.
+- The equipment must exist and be available.
+- A student cannot borrow more than 3 active items at a time.
 
 ---
 
 ## Laboratory Activity 2 — Avalonia Desktop UI
 
-### Desktop Project
+### 1. Desktop Project
+`EquipmentBorrowing.Desktop` adds a graphical interface using Avalonia and the MVVM pattern.
 
-`EquipmentBorrowing.Desktop` is an Avalonia application that provides a graphical interface for the borrowing system. It is responsible for:
+Its main jobs are:
+- Show available equipment and active borrowings.
+- Take user input (choose student, equipment, return date).
+- Send actions to application services through ViewModels.
+- Show success or error messages to the user.
 
-- Displaying equipment and their availability
-- Collecting user input (student, equipment, return date)
-- Displaying active borrowings
-- Initiating borrow and return operations via ViewModels
-- Providing user-facing validation feedback
+It references the Application and Infrastructure layers to run the system. No business logic is placed in the Desktop project.
 
-The Desktop project references `Application` and `Infrastructure`. It does **not** contain any business rules — those remain in the Application and Domain layers.
-
-### Project Structure
-
-```
-EquipmentBorrowing/
-├── src/
-│   ├── EquipmentBorrowing.Domain/          # Entities, value objects
-│   ├── EquipmentBorrowing.Application/     # Services, repository interfaces
-│   │   ├── Interfaces/
-│   │   └── Services/
-│   │       ├── BorrowEquipmentService.cs
-│   │       └── ReturnEquipmentService.cs
-│   ├── EquipmentBorrowing.Infrastructure/  # In-memory repositories
-│   │   └── Repositories/
-│   └── EquipmentBorrowing.Desktop/         # Avalonia UI
-│       ├── Views/
-│       │   ├── MainWindow.axaml
-│       │   ├── EquipmentView.axaml
-│       │   └── BorrowingsView.axaml
-│       ├── ViewModels/
-│       │   ├── MainWindowViewModel.cs
-│       │   ├── EquipmentViewModel.cs
-│       │   └── BorrowingsViewModel.cs
-│       ├── Assets/
-│       │   └── Styles.axaml
-│       ├── App.axaml
-│       └── App.axaml.cs
-└── tests/
-    └── EquipmentBorrowing.Tests/
-```
-
-### Updated Architecture
+### 2. Updated Architecture
 
 ```
-Avalonia View  (EquipmentView, BorrowingsView)
+Avalonia View (EquipmentView, BorrowingsView)
      │
-     │  Binding / Command
+     │ Data Binding / Commands
      ▼
-ViewModel  (EquipmentViewModel, BorrowingsViewModel)
+ViewModel (EquipmentViewModel, BorrowingsViewModel)
      │
-     │  Application Operation
+     │ Calls Service
      ▼
-Application Service  (BorrowEquipmentService, ReturnEquipmentService)
+Application Service (BorrowEquipmentService, ReturnEquipmentService)
      │
-     ├──────────► Domain  (Student, Equipment, Borrowing)
+     ├──────────► Domain Models (Student, Equipment, Borrowing)
      │
      ▼
-Repository Interface  (IEquipmentRepository, IStudentRepository, IBorrowingRepository)
+Repository Interface (IEquipmentRepository, IStudentRepository, IBorrowingRepository)
      ▲
-     │
-Infrastructure Implementation  (InMemory*Repository)
+     │ Implements
+Infrastructure (InMemory Repositories)
 ```
 
-### Dependency Injection
+### 3. Borrow Equipment Flow
+1. The user selects a student, an equipment item, and a return date.
+2. The user clicks **Borrow Equipment**.
+3. `EquipmentViewModel` verifies that required fields are selected (presentation check).
+4. `EquipmentViewModel` calls `BorrowEquipmentService.ExecuteAsync(...)`.
+5. The service checks the business rules (availability, student status, borrow limit).
+6. If valid, the borrowing is created, equipment availability updates to "In Use", and a success message appears.
+7. If invalid, the service returns the reason, and an error message is shown.
 
-Dependencies are configured in `App.axaml.cs` (the composition root):
+### 4. Return Equipment Flow
+1. The user goes to the **Active Borrowings** section.
+2. The user selects an active borrowing from the list.
+3. The user clicks **Return Equipment**.
+4. `BorrowingsViewModel` calls `ReturnEquipmentService.ExecuteAsync(...)`.
+5. The service marks the borrowing as returned and makes the equipment available again.
+6. The list refreshes, removing the item from active borrowings, and a success message appears.
 
-```csharp
-// Singletons — shared state across views
-services.AddSingleton<IStudentRepository>(studentRepo);
-services.AddSingleton<IEquipmentRepository>(equipmentRepo);
-services.AddSingleton<IBorrowingRepository, InMemoryBorrowingRepository>();
+### 5. Architectural Reflection
 
-// Services
-services.AddTransient<BorrowEquipmentService>();
-services.AddTransient<ReturnEquipmentService>();
+- **Why should the View not call a repository directly?**  
+  The View should only handle UI display. Calling a repository directly skips business rules and mixes UI code with data handling.
 
-// ViewModels
-services.AddTransient<EquipmentViewModel>();
-services.AddTransient<BorrowingsViewModel>();
-services.AddSingleton<MainWindowViewModel>();
-```
+- **Why should business rules not be implemented in the ViewModel?**  
+  Business rules belong in the Application/Domain layer. Putting them in the ViewModel duplicates logic, makes testing harder, and causes inconsistencies across different UIs.
 
-Repositories are singletons so state (borrowed equipment) is preserved when navigating between views.
+- **What is the responsibility of the ViewModel?**  
+  The ViewModel connects the View to the Application layer. It stores UI state, runs commands, checks simple input rules (like empty fields), and calls application services.
 
-### Borrow Equipment Flow
+- **Why can the existing Application layer work without knowing that Avalonia is being used?**  
+  The Application layer only depends on domain models and repository interfaces. It has no dependencies on Avalonia, so it works with any UI.
 
-1. User selects a **Student** from the ComboBox in the Equipment view.
-2. User selects an **Equipment** item from the ListBox.
-3. User picks an **Expected Return Date** from the CalendarDatePicker.
-4. User clicks **Borrow Equipment**.
-5. `EquipmentViewModel.BorrowAsync()` runs:
-   - Checks that all fields are filled (presentation validation).
-   - Calls `BorrowEquipmentService.ExecuteAsync(studentId, equipmentId, returnDate)`.
-6. `BorrowEquipmentService` enforces all business rules (existence, availability, borrowing limit).
-7. On success, the borrowing is saved and the equipment list is refreshed — the item now shows "In Use".
-8. A status message (green or red) is displayed to the user.
+- **What advantage is gained from registering dependencies in one composition point?**  
+  All objects and services are set up in one spot (`App.axaml.cs`). This makes dependencies easy to manage, update, and change without editing multiple files.
 
-### Return Equipment Flow
-
-1. User navigates to **Active Borrowings**.
-2. `BorrowingsViewModel.LoadAsync()` fetches all active borrowings and resolves student/equipment names.
-3. User selects a borrowing from the list.
-4. User clicks **Return Equipment**.
-5. `BorrowingsViewModel.ReturnAsync()` calls `ReturnEquipmentService.ExecuteAsync(borrowingId)`.
-6. `ReturnEquipmentService` marks the borrowing as Returned and marks the equipment as Available.
-7. The active borrowings list is refreshed — the returned item disappears.
-8. A status message confirms the result.
-
-### Architectural Reflection
-
-**Why should the View not call a repository directly?**
-The View is responsible only for presentation. If it called repositories directly, it would mix data access concerns with display concerns, making both harder to maintain and test. It also bypasses business rules entirely.
-
-**Why should business rules not be implemented in the ViewModel?**
-Business rules belong to the domain. Duplicating them in the ViewModel means they can drift out of sync, be missed in other entry points, and can not be easily unit-tested in isolation.
-
-**What is the responsibility of the ViewModel?**
-The ViewModel bridges the View and the application logic. It holds presentation state (selected items, status messages, observable collections), exposes commands, performs presentation-level validation (empty fields), and delegates business operations to application services.
-
-**Why can the existing Application layer work without knowing that Avalonia is being used?**
-The Application layer depends only on abstractions (repository interfaces) and the Domain layer. It has no reference to any UI framework, so it can be driven by a console app, a desktop app, an API, or tests — all without modification.
-
-**What advantage is gained from registering dependencies in one composition point?**
-The entire dependency graph is assembled in one place (`App.axaml.cs`). Changing an implementation (e.g., swapping the repository) requires a change in exactly one location, not scattered across the codebase.
-
-**If the in-memory repository were replaced by SQLite, which parts would remain unchanged?**
-The Domain, Application (services and interfaces), ViewModels, and Views would all remain unchanged. Only the Infrastructure implementations and the DI registrations in `App.axaml.cs` would need to change.
-
----
-
-## How to Run
-
-```bash
-dotnet run --project src/EquipmentBorrowing.Desktop
-```
-
-## How to Build
-
-```bash
-dotnet build
-```
-
-## How to Test
-
-```bash
-dotnet test
-```
+- **If the in-memory repository were replaced by SQLite later, which parts of the current interface should remain largely unchanged?**  
+  The Views and ViewModels would remain completely unchanged. Only the Infrastructure repository classes and the registrations in `App.axaml.cs` would need to be updated.
