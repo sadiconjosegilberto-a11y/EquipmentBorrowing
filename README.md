@@ -55,7 +55,7 @@ D. Part I – Architecture Explanation
 		* Domain: Contains the important concepts and rules belonging to the problem itself.
 		* Application: Contains operations or use cases performed by the application, coordinating domain objects.
 		* Infrastructure: Contains implementations concerned with external technical mechanisms, such as in-memory storage.
-		* EquipmentBorrowing.Desktop: Handles the Avalonia UI presentation layer, displays information, collects user input, and invokes operations through ViewModels[cite: 12].
+		* EquipmentBorrowing.Desktop: Handles the Avalonia UI presentation layer, displays information, collects user input, and invokes operations through ViewModels.
 		* Tests: Contains automated tests for application or domain behavior.
 
 	2. Updated Architecture and Dependency Direction
@@ -74,7 +74,7 @@ D. Part I – Architecture Explanation
 		          ▲
 		          │
 		Infrastructure Implementation
-		```[cite: 21, 22]
+		```
 			
 	3. Use Case Mapping
 		Actor: Student.
@@ -85,27 +85,27 @@ D. Part I – Architecture Explanation
 		Infrastructure Implementations Used: InMemoryStudentRepository, InMemoryEquipmentRepository, InMemoryBorrowingRepository.
 
 	4. Borrow Equipment Flow
-		* The user selects equipment from the interface[cite: 14].
-		* The ViewModel collects the input and invokes the application service via a command[cite: 14, 15].
-		* The Application Service validates the business rules and executes the operation[cite: 15].
-		* The result is communicated back to the user on the screen[cite: 15].
+		* The user selects equipment from the interface.
+		* The ViewModel collects the input and invokes the application service via a command.
+		* The Application Service validates the business rules and executes the operation.
+		* The result is communicated back to the user on the screen.
 
 	5. Return Equipment Flow
-		* The user selects a borrowing from the Active Borrowings View and issues a return command[cite: 16].
-		* The ViewModel invokes the ReturnEquipmentService[cite: 16].
-		* The service locates the borrowing, updates its status, and updates equipment availability via the repositories[cite: 16].
-		* The interface refreshes to display the updated system state[cite: 16].
+		* The user selects a borrowing from the Active Borrowings View and issues a return command.
+		* The ViewModel invokes the ReturnEquipmentService.
+		* The service locates the borrowing, updates its status, and updates equipment availability via the repositories.
+		* The interface refreshes to display the updated system state.
 
 	6. Architectural Reflection
 		1. Why should the View not call a repository directly? 
-		   Views should strictly handle presentation; directly calling repositories bypasses the Application layer where business logic and operations are coordinated[cite: 9, 25].
+		   Views should strictly handle presentation; directly calling repositories bypasses the Application layer where business logic and operations are coordinated.
 		2. Why should business rules not be implemented in the ViewModel? 
-		   ViewModels handle presentation state; business rules belong in the Domain and Application layers to ensure logic remains independent of the UI[cite: 11, 25].
+		   ViewModels handle presentation state; business rules belong in the Domain and Application layers to ensure logic remains independent of the UI.
 		3. What is the responsibility of the ViewModel? 
-		   To maintain presentation state, handle user commands, expose observable properties, and call application services[cite: 17].
+		   To maintain presentation state, handle user commands, expose observable properties, and call application services.
 		4. Why can the existing Application layer work without knowing that Avalonia is being used? 
-		   The Application layer relies strictly on domain concepts and repository abstractions, keeping it entirely decoupled from the desktop framework[cite: 9, 12].
+		   The Application layer relies strictly on domain concepts and repository abstractions, keeping it entirely decoupled from the desktop framework.
 		5. What advantage is gained from registering dependencies in one composition point? 
-		   It centralizes the dependency graph, ensuring ViewModels receive instances through constructors rather than manually instantiating services themselves[cite: 18].
+		   It centralizes the dependency graph, ensuring ViewModels receive instances through constructors rather than manually instantiating services themselves.
 		6. If the in-memory repository were replaced by SQLite later, which parts of the current interface should remain largely unchanged? 
-		   The Views and ViewModels would remain unchanged, as the UI does not depend on database infrastructure details[cite: 22, 25].
+		   The Views and ViewModels would remain unchanged, as the UI does not depend on database infrastructure details.
