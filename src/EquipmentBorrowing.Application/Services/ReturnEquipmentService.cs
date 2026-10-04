@@ -1,4 +1,4 @@
-﻿using EquipmentBorrowing.Application.Interfaces;
+using EquipmentBorrowing.Application.Interfaces;
 
 namespace EquipmentBorrowing.Application.Services;
 
@@ -47,6 +47,7 @@ public class ReturnEquipmentService
         equipment.MarkReturned();
 
         await _borrowingRepository.UpdateAsync(borrowing);
+        await _equipmentRepository.UpdateAsync(equipment);
         return ReturnEquipmentResult.Ok();
     }
 }

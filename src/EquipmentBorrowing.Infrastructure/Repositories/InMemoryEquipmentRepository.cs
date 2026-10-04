@@ -1,4 +1,4 @@
-﻿using EquipmentBorrowing.Application.Interfaces;
+using EquipmentBorrowing.Application.Interfaces;
 using EquipmentBorrowing.Domain;
 
 namespace EquipmentBorrowing.Infrastructure.Repositories;
@@ -19,5 +19,11 @@ public class InMemoryEquipmentRepository : IEquipmentRepository
     {
         IReadOnlyList<Equipment> list = _equipment.Values.ToList();
         return Task.FromResult(list);
+    }
+
+    public Task UpdateAsync(Equipment equipment, CancellationToken cancellationToken = default)
+    {
+        _equipment[equipment.Id] = equipment;
+        return Task.CompletedTask;
     }
 }

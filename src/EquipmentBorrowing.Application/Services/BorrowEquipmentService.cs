@@ -1,4 +1,4 @@
-﻿using EquipmentBorrowing.Application.Interfaces;
+using EquipmentBorrowing.Application.Interfaces;
 using EquipmentBorrowing.Domain;
 
 namespace EquipmentBorrowing.Application.Services;
@@ -60,12 +60,13 @@ public class BorrowEquipmentService
 
         equipment.MarkBorrowed();
         var borrowing = new Borrowing(
-            id: new Random().Next(1000, 9999),
+            id: 0,
             studentId: studentId,
             equipmentId: equipmentId,
             dateBorrowed: DateTime.UtcNow,
             expectedReturnDate: expectedReturnDate);
 
+        await _equipmentRepository.UpdateAsync(equipment);
         await _borrowingRepository.AddAsync(borrowing);
         return BorrowEquipmentResult.Ok(borrowing);
     }
