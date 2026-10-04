@@ -1,10 +1,13 @@
-﻿namespace EquipmentBorrowing.Domain;
+namespace EquipmentBorrowing.Domain;
 
 public class Equipment
 {
-    public int Id { get; }
-    public string Name { get; }
+    public int Id { get; private set; }
+    public string Name { get; private set; } = string.Empty;
     public bool IsAvailable { get; private set; } = true;
+
+    // Parameterless constructor for EF Core materialization
+    private Equipment() { }
 
     public Equipment(int id, string name)
     {
