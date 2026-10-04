@@ -1,0 +1,122 @@
+info: 10/5/2026 00:25:16.863 RelationalEventId.AcquiringMigrationLock[20411] (Microsoft.EntityFrameworkCore.Migrations) 
+      Acquiring an exclusive lock for migration application. See https://aka.ms/efcore-docs-migrations-lock for more information if this takes too long.info: 10/5/2026 00:25:16.912 RelationalEventId.CommandExecuted[20101] (Microsoft.EntityFrameworkCore.Database.Command) 
+      Executed DbCommand (20ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT COUNT(*) FROM "sqlite_master" WHERE "name" = '__EFMigrationsLock' AND "type" = 'table';info: 10/5/2026 00:25:16.926 RelationalEventId.CommandExecuted[20101] (Microsoft.EntityFrameworkCore.Database.Command) 
+      Executed DbCommand (11ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      INSERT OR IGNORE INTO "__EFMigrationsLock"("Id", "Timestamp") VALUES(1, '2026-10-04 16:25:16.9151892+00:00');
+      SELECT changes();info: 10/5/2026 00:25:17.024 RelationalEventId.CommandExecuted[20101] (Microsoft.EntityFrameworkCore.Database.Command) 
+      Executed DbCommand (1ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      CREATE TABLE IF NOT EXISTS "__EFMigrationsHistory" (
+          "MigrationId" TEXT NOT NULL CONSTRAINT "PK___EFMigrationsHistory" PRIMARY KEY,
+          "ProductVersion" TEXT NOT NULL
+      );info: 10/5/2026 00:25:17.035 RelationalEventId.CommandExecuted[20101] (Microsoft.EntityFrameworkCore.Database.Command) 
+      Executed DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT COUNT(*) FROM "sqlite_master" WHERE "name" = '__EFMigrationsHistory' AND "type" = 'table';info: 10/5/2026 00:25:17.039 RelationalEventId.CommandExecuted[20101] (Microsoft.EntityFrameworkCore.Database.Command) 
+      Executed DbCommand (1ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT "MigrationId", "ProductVersion"
+      FROM "__EFMigrationsHistory"
+      ORDER BY "MigrationId";info: 10/5/2026 00:25:17.052 RelationalEventId.MigrationsNotApplied[20405] (Microsoft.EntityFrameworkCore.Migrations) 
+      No migrations were applied. The database is already up to date.info: 10/5/2026 00:25:17.054 RelationalEventId.CommandExecuted[20101] (Microsoft.EntityFrameworkCore.Database.Command) 
+      Executed DbCommand (1ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      DELETE FROM "__EFMigrationsLock";info: 10/5/2026 00:25:17.762 RelationalEventId.CommandExecuted[20101] (Microsoft.EntityFrameworkCore.Database.Command) 
+      Executed DbCommand (3ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT "e"."Id", "e"."IsAvailable", "e"."Name"
+      FROM "Equipment" AS "e"info: 10/5/2026 00:25:17.782 RelationalEventId.CommandExecuted[20101] (Microsoft.EntityFrameworkCore.Database.Command) 
+      Executed DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT "s"."Id", "s"."IsAllowedToBorrow", "s"."Name"
+      FROM "Students" AS "s"info: 10/5/2026 00:25:27.563 RelationalEventId.CommandExecuted[20101] (Microsoft.EntityFrameworkCore.Database.Command) 
+      Executed DbCommand (4ms) [Parameters=[@p='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      SELECT "s"."Id", "s"."IsAllowedToBorrow", "s"."Name"
+      FROM "Students" AS "s"
+      WHERE "s"."Id" = @p
+      LIMIT 1info: 10/5/2026 00:25:27.631 RelationalEventId.CommandExecuted[20101] (Microsoft.EntityFrameworkCore.Database.Command) 
+      Executed DbCommand (0ms) [Parameters=[@p='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      SELECT "e"."Id", "e"."IsAvailable", "e"."Name"
+      FROM "Equipment" AS "e"
+      WHERE "e"."Id" = @p
+      LIMIT 1info: 10/5/2026 00:25:27.696 RelationalEventId.CommandExecuted[20101] (Microsoft.EntityFrameworkCore.Database.Command) 
+      Executed DbCommand (0ms) [Parameters=[@studentId='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      SELECT COUNT(*)
+      FROM "Borrowings" AS "b"
+      WHERE "b"."StudentId" = @studentId AND "b"."Status" = 'Active'info: 10/5/2026 00:25:27.800 RelationalEventId.CommandExecuted[20101] (Microsoft.EntityFrameworkCore.Database.Command) 
+      Executed DbCommand (2ms) [Parameters=[@p2='?' (DbType = Int32), @p0='?' (DbType = Boolean), @p1='?' (Size = 18)], CommandType='Text', CommandTimeout='30']
+      UPDATE "Equipment" SET "IsAvailable" = @p0, "Name" = @p1
+      WHERE "Id" = @p2
+      RETURNING 1;info: 10/5/2026 00:25:27.915 RelationalEventId.CommandExecuted[20101] (Microsoft.EntityFrameworkCore.Database.Command) 
+      Executed DbCommand (0ms) [Parameters=[@p0='?' (DbType = DateTime), @p1='?' (DbType = Int32), @p2='?' (DbType = DateTime), @p3='?' (Size = 6), @p4='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      INSERT INTO "Borrowings" ("DateBorrowed", "EquipmentId", "ExpectedReturnDate", "Status", "StudentId")
+      VALUES (@p0, @p1, @p2, @p3, @p4)
+      RETURNING "Id";info: 10/5/2026 00:25:27.963 RelationalEventId.CommandExecuted[20101] (Microsoft.EntityFrameworkCore.Database.Command) 
+      Executed DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT "e"."Id", "e"."IsAvailable", "e"."Name"
+      FROM "Equipment" AS "e"info: 10/5/2026 00:25:27.966 RelationalEventId.CommandExecuted[20101] (Microsoft.EntityFrameworkCore.Database.Command) 
+      Executed DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT "s"."Id", "s"."IsAllowedToBorrow", "s"."Name"
+      FROM "Students" AS "s"info: 10/5/2026 00:28:42.569 RelationalEventId.AcquiringMigrationLock[20411] (Microsoft.EntityFrameworkCore.Migrations) 
+      Acquiring an exclusive lock for migration application. See https://aka.ms/efcore-docs-migrations-lock for more information if this takes too long.info: 10/5/2026 00:28:42.617 RelationalEventId.CommandExecuted[20101] (Microsoft.EntityFrameworkCore.Database.Command) 
+      Executed DbCommand (20ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT COUNT(*) FROM "sqlite_master" WHERE "name" = '__EFMigrationsLock' AND "type" = 'table';info: 10/5/2026 00:28:42.625 RelationalEventId.CommandExecuted[20101] (Microsoft.EntityFrameworkCore.Database.Command) 
+      Executed DbCommand (4ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      INSERT OR IGNORE INTO "__EFMigrationsLock"("Id", "Timestamp") VALUES(1, '2026-10-04 16:28:42.6208047+00:00');
+      SELECT changes();info: 10/5/2026 00:28:42.721 RelationalEventId.CommandExecuted[20101] (Microsoft.EntityFrameworkCore.Database.Command) 
+      Executed DbCommand (1ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      CREATE TABLE IF NOT EXISTS "__EFMigrationsHistory" (
+          "MigrationId" TEXT NOT NULL CONSTRAINT "PK___EFMigrationsHistory" PRIMARY KEY,
+          "ProductVersion" TEXT NOT NULL
+      );info: 10/5/2026 00:28:42.734 RelationalEventId.CommandExecuted[20101] (Microsoft.EntityFrameworkCore.Database.Command) 
+      Executed DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT COUNT(*) FROM "sqlite_master" WHERE "name" = '__EFMigrationsHistory' AND "type" = 'table';info: 10/5/2026 00:28:42.738 RelationalEventId.CommandExecuted[20101] (Microsoft.EntityFrameworkCore.Database.Command) 
+      Executed DbCommand (1ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT "MigrationId", "ProductVersion"
+      FROM "__EFMigrationsHistory"
+      ORDER BY "MigrationId";info: 10/5/2026 00:28:42.751 RelationalEventId.MigrationsNotApplied[20405] (Microsoft.EntityFrameworkCore.Migrations) 
+      No migrations were applied. The database is already up to date.info: 10/5/2026 00:28:42.753 RelationalEventId.CommandExecuted[20101] (Microsoft.EntityFrameworkCore.Database.Command) 
+      Executed DbCommand (1ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      DELETE FROM "__EFMigrationsLock";info: 10/5/2026 00:28:43.454 RelationalEventId.CommandExecuted[20101] (Microsoft.EntityFrameworkCore.Database.Command) 
+      Executed DbCommand (3ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT "e"."Id", "e"."IsAvailable", "e"."Name"
+      FROM "Equipment" AS "e"info: 10/5/2026 00:28:43.475 RelationalEventId.CommandExecuted[20101] (Microsoft.EntityFrameworkCore.Database.Command) 
+      Executed DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT "s"."Id", "s"."IsAllowedToBorrow", "s"."Name"
+      FROM "Students" AS "s"info: 10/5/2026 00:29:42.643 RelationalEventId.CommandExecuted[20101] (Microsoft.EntityFrameworkCore.Database.Command) 
+      Executed DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT "b"."Id", "b"."DateBorrowed", "b"."EquipmentId", "b"."ExpectedReturnDate", "b"."Status", "b"."StudentId", "s"."Id", "s"."IsAllowedToBorrow", "s"."Name", "e"."Id", "e"."IsAvailable", "e"."Name"
+      FROM "Borrowings" AS "b"
+      INNER JOIN "Students" AS "s" ON "b"."StudentId" = "s"."Id"
+      INNER JOIN "Equipment" AS "e" ON "b"."EquipmentId" = "e"."Id"
+      WHERE "b"."Status" = 'Active'info: 10/5/2026 00:29:42.703 RelationalEventId.CommandExecuted[20101] (Microsoft.EntityFrameworkCore.Database.Command) 
+      Executed DbCommand (4ms) [Parameters=[@p='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      SELECT "e"."Id", "e"."IsAvailable", "e"."Name"
+      FROM "Equipment" AS "e"
+      WHERE "e"."Id" = @p
+      LIMIT 1info: 10/5/2026 00:29:42.773 RelationalEventId.CommandExecuted[20101] (Microsoft.EntityFrameworkCore.Database.Command) 
+      Executed DbCommand (0ms) [Parameters=[@p='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      SELECT "s"."Id", "s"."IsAllowedToBorrow", "s"."Name"
+      FROM "Students" AS "s"
+      WHERE "s"."Id" = @p
+      LIMIT 1info: 10/5/2026 00:29:44.296 RelationalEventId.CommandExecuted[20101] (Microsoft.EntityFrameworkCore.Database.Command) 
+      Executed DbCommand (0ms) [Parameters=[@id='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      SELECT "b"."Id", "b"."DateBorrowed", "b"."EquipmentId", "b"."ExpectedReturnDate", "b"."Status", "b"."StudentId", "s"."Id", "s"."IsAllowedToBorrow", "s"."Name", "e"."Id", "e"."IsAvailable", "e"."Name"
+      FROM "Borrowings" AS "b"
+      INNER JOIN "Students" AS "s" ON "b"."StudentId" = "s"."Id"
+      INNER JOIN "Equipment" AS "e" ON "b"."EquipmentId" = "e"."Id"
+      WHERE "b"."Id" = @id
+      LIMIT 1info: 10/5/2026 00:29:44.472 RelationalEventId.CommandExecuted[20101] (Microsoft.EntityFrameworkCore.Database.Command) 
+      Executed DbCommand (2ms) [Parameters=[@p5='?' (DbType = Int32), @p0='?' (DbType = DateTime), @p1='?' (DbType = Int32), @p2='?' (DbType = DateTime), @p3='?' (Size = 8), @p4='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      UPDATE "Borrowings" SET "DateBorrowed" = @p0, "EquipmentId" = @p1, "ExpectedReturnDate" = @p2, "Status" = @p3, "StudentId" = @p4
+      WHERE "Id" = @p5
+      RETURNING 1;info: 10/5/2026 00:29:44.479 RelationalEventId.CommandExecuted[20101] (Microsoft.EntityFrameworkCore.Database.Command) 
+      Executed DbCommand (0ms) [Parameters=[@p1='?' (DbType = Int32), @p0='?' (DbType = Boolean)], CommandType='Text', CommandTimeout='30']
+      UPDATE "Equipment" SET "IsAvailable" = @p0
+      WHERE "Id" = @p1
+      RETURNING 1;info: 10/5/2026 00:29:44.495 RelationalEventId.CommandExecuted[20101] (Microsoft.EntityFrameworkCore.Database.Command) 
+      Executed DbCommand (0ms) [Parameters=[@p2='?' (DbType = Int32), @p0='?' (DbType = Boolean), @p1='?' (Size = 18)], CommandType='Text', CommandTimeout='30']
+      UPDATE "Equipment" SET "IsAvailable" = @p0, "Name" = @p1
+      WHERE "Id" = @p2
+      RETURNING 1;info: 10/5/2026 00:29:44.511 RelationalEventId.CommandExecuted[20101] (Microsoft.EntityFrameworkCore.Database.Command) 
+      Executed DbCommand (0ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT "b"."Id", "b"."DateBorrowed", "b"."EquipmentId", "b"."ExpectedReturnDate", "b"."Status", "b"."StudentId", "s"."Id", "s"."IsAllowedToBorrow", "s"."Name", "e"."Id", "e"."IsAvailable", "e"."Name"
+      FROM "Borrowings" AS "b"
+      INNER JOIN "Students" AS "s" ON "b"."StudentId" = "s"."Id"
+      INNER JOIN "Equipment" AS "e" ON "b"."EquipmentId" = "e"."Id"
+      WHERE "b"."Status" = 'Active'

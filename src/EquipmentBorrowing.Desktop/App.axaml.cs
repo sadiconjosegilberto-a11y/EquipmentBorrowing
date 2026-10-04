@@ -12,6 +12,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using System;
+using System.IO;
 
 namespace EquipmentBorrowing.Desktop;
 
@@ -50,11 +51,11 @@ public partial class App : Avalonia.Application
 
     private static void ConfigureServices(IServiceCollection services)
     {
-        // 1. Register DbContext with SQLite and enable SQL logging
+        // 1. Register DbContext with SQLite and log SQL statements directly to ef_sql.log
         services.AddDbContext<EquipmentBorrowingDbContext>(options =>
         {
             options.UseSqlite("Data Source=lab3_borrowing.db");
-            options.LogTo(Console.WriteLine, LogLevel.Information); // For capturing SQL in your README
+            options.LogTo(message => File.AppendAllText("ef_sql.log", message), LogLevel.Information);
         });
 
         // 2. Register EF Core Repositories
