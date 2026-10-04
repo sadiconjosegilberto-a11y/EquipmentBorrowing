@@ -1,5 +1,4 @@
-﻿using Avalonia.Controls;
-using Avalonia.Markup.Xaml;
+using Avalonia.Controls;
 
 namespace EquipmentBorrowing.Desktop.Views;
 
@@ -7,6 +6,6 @@ public partial class EquipmentView : UserControl
 {
     public EquipmentView()
     {
-        AvaloniaXamlLoader.Load(this);
+        InitializeComponent();
     }
 }
