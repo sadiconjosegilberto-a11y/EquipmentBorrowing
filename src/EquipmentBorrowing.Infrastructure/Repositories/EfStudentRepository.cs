@@ -16,14 +16,41 @@ public class EfStudentRepository : IStudentRepository
 
     public async Task<Student?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
     {
-        // Matches GetByIdAsync signature[cite: 2]
-        return await _context.Students.FindAsync(new object[] { id }, cancellationToken);
+        return await _context.Students
+            .AsNoTracking()
+            .FirstOrDefaultAsync(s => s.Id == id, cancellationToken);
     }
 
     public async Task<IReadOnlyList<Student>> GetAllAsync(CancellationToken cancellationToken = default)
     {
-        // Returns IReadOnlyList<Student> as required by the interface[cite: 2]
-        // AsNoTracking is used here since this is a read-only operation
-        return await _context.Students.AsNoTracking().ToListAsync(cancellationToken);
+        return await _context.Students
+            .AsNoTracking()
+            .OrderBy(s => s.Name)
+            .ThenBy(s => s.Id)
+            .ToListAsync(cancellationToken);
+    }
+
+    public async Task<bool> ExistsByNormalizedNumberAsync(
+        string normalizedStudentNumber,
+        int? excludeStudentId = null,
+        CancellationToken cancellationToken = default)
+    {
+        return await _context.Students
+            .AsNoTracking()
+            .AnyAsync(s => s.NormalizedStudentNumber == normalizedStudentNumber
+                        && (!excludeStudentId.HasValue || s.Id != excludeStudentId.Value),
+                cancellationToken);
+    }
+
+    public async Task AddAsync(Student student, CancellationToken cancellationToken = default)
+    {
+        await _context.Students.AddAsync(student, cancellationToken);
+        await _context.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task UpdateAsync(Student student, CancellationToken cancellationToken = default)
+    {
+        _context.Students.Update(student);
+        await _context.SaveChangesAsync(cancellationToken);
     }
 }

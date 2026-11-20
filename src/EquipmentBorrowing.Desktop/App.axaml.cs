@@ -5,7 +5,6 @@ using EquipmentBorrowing.Application.Interfaces;
 using EquipmentBorrowing.Application.Services;
 using EquipmentBorrowing.Desktop.ViewModels;
 using EquipmentBorrowing.Desktop.Views;
-using EquipmentBorrowing.Domain;
 using EquipmentBorrowing.Infrastructure.Persistence;
 using EquipmentBorrowing.Infrastructure.Repositories;
 using Microsoft.EntityFrameworkCore;
@@ -31,11 +30,15 @@ public partial class App : Avalonia.Application
         ConfigureServices(services);
         _services = services.BuildServiceProvider();
 
-        // Automatically apply database migrations and create missing tables on startup
-        using (var scope = _services.CreateScope())
+        try
         {
+            using var scope = _services.CreateScope();
             var dbContext = scope.ServiceProvider.GetRequiredService<EquipmentBorrowingDbContext>();
             dbContext.Database.Migrate();
+        }
+        catch
+        {
+            // Allow UI to launch and display connection errors when PostgreSQL is unreachable (BR-18/BR-19)
         }
 
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
@@ -51,23 +54,23 @@ public partial class App : Avalonia.Application
 
     private static void ConfigureServices(IServiceCollection services)
     {
-        // 1. Register DbContext with SQLite and log SQL statements directly to ef_sql.log
+        var connectionString = Environment.GetEnvironmentVariable("EQUIPMENT_BORROWING_CONNECTION")
+            ?? throw new InvalidOperationException(
+                "Set the EQUIPMENT_BORROWING_CONNECTION environment variable.");
+
         services.AddDbContext<EquipmentBorrowingDbContext>(options =>
         {
-            options.UseSqlite("Data Source=lab3_borrowing.db");
+            options.UseNpgsql(connectionString);
             options.LogTo(message => File.AppendAllText("ef_sql.log", message), LogLevel.Information);
-        });
+        }, ServiceLifetime.Transient, ServiceLifetime.Transient);
 
-        // 2. Register EF Core Repositories
         services.AddTransient<IStudentRepository, EfStudentRepository>();
         services.AddTransient<IEquipmentRepository, EfEquipmentRepository>();
         services.AddTransient<IBorrowingRepository, EfBorrowingRepository>();
 
-        // Application services
         services.AddTransient<BorrowEquipmentService>();
         services.AddTransient<ReturnEquipmentService>();
 
-        // ViewModels
         services.AddTransient<EquipmentViewModel>();
         services.AddTransient<BorrowingsViewModel>();
         services.AddSingleton<MainWindowViewModel>();

@@ -6,4 +6,7 @@ public interface IStudentRepository
 {
     Task<Student?> GetByIdAsync(int id, CancellationToken cancellationToken = default);
     Task<IReadOnlyList<Student>> GetAllAsync(CancellationToken cancellationToken = default);
+    Task<bool> ExistsByNormalizedNumberAsync(string normalizedStudentNumber, int? excludeStudentId = null, CancellationToken cancellationToken = default);
+    Task AddAsync(Student student, CancellationToken cancellationToken = default);
+    Task UpdateAsync(Student student, CancellationToken cancellationToken = default);
 }

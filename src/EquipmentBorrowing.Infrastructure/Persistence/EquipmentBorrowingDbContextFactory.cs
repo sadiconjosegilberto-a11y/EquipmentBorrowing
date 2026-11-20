@@ -1,3 +1,4 @@
+using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 
@@ -7,8 +8,12 @@ public class EquipmentBorrowingDbContextFactory : IDesignTimeDbContextFactory<Eq
 {
     public EquipmentBorrowingDbContext CreateDbContext(string[] args)
     {
+        var connectionString = Environment.GetEnvironmentVariable("EQUIPMENT_BORROWING_CONNECTION")
+            ?? throw new InvalidOperationException(
+                "Set the EQUIPMENT_BORROWING_CONNECTION environment variable before running migrations.");
+
         var optionsBuilder = new DbContextOptionsBuilder<EquipmentBorrowingDbContext>();
-        optionsBuilder.UseSqlite("Data Source=equipment_borrowing.db");
+        optionsBuilder.UseNpgsql(connectionString);
 
         return new EquipmentBorrowingDbContext(optionsBuilder.Options);
     }

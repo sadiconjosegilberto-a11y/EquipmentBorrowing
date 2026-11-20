@@ -22,17 +22,21 @@ public class BorrowingConfiguration : IEntityTypeConfiguration<Borrowing>
             .IsRequired();
 
         builder.Property(b => b.DateBorrowed)
+            .HasColumnType("date")
             .IsRequired();
 
         builder.Property(b => b.ExpectedReturnDate)
+            .HasColumnType("date")
             .IsRequired();
+
+        builder.Property(b => b.ReturnedDate)
+            .HasColumnType("date");
 
         builder.Property(b => b.Status)
             .HasConversion<string>()
             .HasMaxLength(20)
             .IsRequired();
 
-        // Foreign Key Relationships
         builder.HasOne(b => b.Student)
             .WithMany()
             .HasForeignKey(b => b.StudentId)
@@ -43,9 +47,11 @@ public class BorrowingConfiguration : IEntityTypeConfiguration<Borrowing>
             .HasForeignKey(b => b.EquipmentId)
             .OnDelete(DeleteBehavior.Restrict);
 
-        // Indexes for performance on queries and foreign keys
+        builder.HasIndex(b => b.EquipmentId)
+            .IsUnique()
+            .HasFilter("\"Status\" = 'Active'");
+
         builder.HasIndex(b => b.StudentId);
-        builder.HasIndex(b => b.EquipmentId);
         builder.HasIndex(b => b.Status);
     }
 }

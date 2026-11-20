@@ -5,49 +5,51 @@ namespace EquipmentBorrowing.Application.Services;
 public class ReturnEquipmentResult
 {
     public bool Success { get; }
+    public bool IsUnknownOutcome { get; }
     public string? FailureReason { get; }
 
-    private ReturnEquipmentResult(bool success, string? failureReason)
+    private ReturnEquipmentResult(bool success, bool isUnknownOutcome, string? failureReason)
     {
         Success = success;
+        IsUnknownOutcome = isUnknownOutcome;
         FailureReason = failureReason;
     }
 
-    public static ReturnEquipmentResult Fail(string reason) => new(false, reason);
-    public static ReturnEquipmentResult Ok() => new(true, null);
+    public static ReturnEquipmentResult Fail(string reason, bool isUnknownOutcome = false) =>
+        new(false, isUnknownOutcome, reason);
+
+    public static ReturnEquipmentResult Ok() => new(true, false, null);
 }
 
 public class ReturnEquipmentService
 {
     private readonly IBorrowingRepository _borrowingRepository;
-    private readonly IEquipmentRepository _equipmentRepository;
 
-    public ReturnEquipmentService(
-        IBorrowingRepository borrowingRepository,
-        IEquipmentRepository equipmentRepository)
+    public ReturnEquipmentService(IBorrowingRepository borrowingRepository)
     {
         _borrowingRepository = borrowingRepository;
-        _equipmentRepository = equipmentRepository;
     }
 
-    public async Task<ReturnEquipmentResult> ExecuteAsync(int borrowingId)
+    public async Task<ReturnEquipmentResult> ExecuteAsync(
+        int borrowingId,
+        CancellationToken cancellationToken = default)
     {
-        var borrowing = await _borrowingRepository.GetByIdAsync(borrowingId);
-        if (borrowing is null)
-            return ReturnEquipmentResult.Fail("Borrowing record not found.");
+        if (borrowingId <= 0)
+            return ReturnEquipmentResult.Fail("A valid active borrowing must be selected.");
 
-        if (borrowing.Status == Domain.BorrowingStatus.Returned)
-            return ReturnEquipmentResult.Fail("This borrowing has already been returned.");
-
-        var equipment = await _equipmentRepository.GetByIdAsync(borrowing.EquipmentId);
-        if (equipment is null)
-            return ReturnEquipmentResult.Fail("Equipment record not found.");
-
-        borrowing.MarkReturned();
-        equipment.MarkReturned();
-
-        await _borrowingRepository.UpdateAsync(borrowing);
-        await _equipmentRepository.UpdateAsync(equipment);
-        return ReturnEquipmentResult.Ok();
+        try
+        {
+            await _borrowingRepository.ReturnBorrowingAsync(borrowingId, DateTime.Today, cancellationToken);
+            return ReturnEquipmentResult.Ok();
+        }
+        catch (Exception ex) when (ex is ArgumentException or InvalidOperationException)
+        {
+            return ReturnEquipmentResult.Fail(ex.Message);
+        }
+        catch (Exception ex)
+        {
+            var (unknown, msg) = PersistenceErrorHelper.Describe(ex);
+            return ReturnEquipmentResult.Fail(msg, unknown);
+        }
     }
 }
