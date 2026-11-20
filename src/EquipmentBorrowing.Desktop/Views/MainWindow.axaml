@@ -5,39 +5,49 @@
         x:DataType="vm:MainWindowViewModel"
         x:Class="EquipmentBorrowing.Desktop.Views.MainWindow"
         Title="Campus Equipment Borrowing System"
-        Width="900" Height="600"
+        Width="1120" Height="700"
         WindowStartupLocation="CenterScreen">
 
-  <Window.DataTemplates>
-    <DataTemplate DataType="vm:EquipmentViewModel">
-      <views:EquipmentView/>
-    </DataTemplate>
-    <DataTemplate DataType="vm:BorrowingsViewModel">
-      <views:BorrowingsView/>
-    </DataTemplate>
-  </Window.DataTemplates>
+	<Window.DataTemplates>
+		<DataTemplate DataType="vm:EquipmentViewModel">
+			<views:EquipmentView/>
+		</DataTemplate>
+		<DataTemplate DataType="vm:BorrowingsViewModel">
+			<views:BorrowingsView/>
+		</DataTemplate>
+		<DataTemplate DataType="vm:StudentsViewModel">
+			<views:StudentsView/>
+		</DataTemplate>
+		<DataTemplate DataType="vm:EquipmentManagementViewModel">
+			<views:EquipmentManagementView/>
+		</DataTemplate>
+	</Window.DataTemplates>
 
-  <Grid ColumnDefinitions="200,*">
+	<Grid ColumnDefinitions="210,*">
+		<Border Grid.Column="0" Classes="Sidebar">
+			<StackPanel Spacing="8" Margin="12">
+				<TextBlock Text="Campus Equipment" Classes="AppTitle" TextWrapping="Wrap"/>
+				<TextBlock Text="Borrowing System" Classes="AppSubtitle" TextWrapping="Wrap" Margin="0 0 0 16"/>
 
-    <!-- Sidebar -->
-    <Border Grid.Column="0" Classes="Sidebar">
-      <StackPanel Spacing="8" Margin="12">
-        <TextBlock Text="Campus Equipment" Classes="AppTitle" TextWrapping="Wrap"/>
-        <TextBlock Text="Borrowing System" Classes="AppSubtitle" TextWrapping="Wrap" Margin="0 0 0 16"/>
+				<Button Content="Catalog &amp; Checkout"
+						Command="{Binding NavigateToEquipmentCommand}"
+						Classes="NavButton"
+						HorizontalAlignment="Stretch"/>
+				<Button Content="Borrowings &amp; Search"
+						Command="{Binding NavigateToBorrowingsCommand}"
+						Classes="NavButton"
+						HorizontalAlignment="Stretch"/>
+				<Button Content="Students &amp; History"
+						Command="{Binding NavigateToStudentsCommand}"
+						Classes="NavButton"
+						HorizontalAlignment="Stretch"/>
+				<Button Content="Equipment &amp; History"
+						Command="{Binding NavigateToEquipmentManagementCommand}"
+						Classes="NavButton"
+						HorizontalAlignment="Stretch"/>
+			</StackPanel>
+		</Border>
 
-        <Button Content="Equipment"
-                Command="{Binding NavigateToEquipmentCommand}"
-                Classes="NavButton"
-                HorizontalAlignment="Stretch"/>
-        <Button Content="Active Borrowings"
-                Command="{Binding NavigateToBorrowingsCommand}"
-                Classes="NavButton"
-                HorizontalAlignment="Stretch"/>
-      </StackPanel>
-    </Border>
-
-    <!-- Content Area -->
-    <ContentControl Grid.Column="1" Content="{Binding CurrentView}"/>
-
-  </Grid>
+		<ContentControl Grid.Column="1" Content="{Binding CurrentView}"/>
+	</Grid>
 </Window>

@@ -1,0 +1,93 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:EquipmentBorrowing.Desktop.ViewModels"
+             xmlns:domain="using:EquipmentBorrowing.Domain"
+             x:Class="EquipmentBorrowing.Desktop.Views.StudentsView"
+             x:DataType="vm:StudentsViewModel">
+
+  <Grid RowDefinitions="*,Auto" Margin="16">
+    <Grid ColumnDefinitions="260,*,300" Margin="0 0 0 8">
+
+      <!-- Left: Student List -->
+      <DockPanel Grid.Column="0" Margin="0 0 12 0">
+        <Grid DockPanel.Dock="Top" ColumnDefinitions="*,Auto" Margin="0 0 0 8">
+          <TextBlock Grid.Column="0" Text="Students" Classes="SectionHeader"/>
+          <Button Grid.Column="1" Content="Refresh" Command="{Binding LoadCommand}"/>
+        </Grid>
+        <ListBox ItemsSource="{Binding Students}" SelectedItem="{Binding SelectedStudent}">
+          <ListBox.ItemTemplate>
+            <DataTemplate x:DataType="domain:Student">
+              <StackPanel Margin="2">
+                <TextBlock Text="{Binding Name}" Classes="ItemTitle"/>
+                <TextBlock Text="{Binding StudentNumber}" Classes="ItemSubtitle"/>
+                <TextBlock Text="Allowed to Borrow" IsVisible="{Binding IsAllowedToBorrow}" Classes="ItemSubtitle"/>
+                <TextBlock Text="Restricted" IsVisible="{Binding !IsAllowedToBorrow}" Classes="ItemSubtitle"/>
+              </StackPanel>
+            </DataTemplate>
+          </ListBox.ItemTemplate>
+        </ListBox>
+      </DockPanel>
+
+      <!-- Center: Selected Student History (UC-07) -->
+      <DockPanel Grid.Column="1" Margin="0 0 12 0">
+        <TextBlock DockPanel.Dock="Top" Text="Student Borrowing History (UC-07)" Classes="SectionHeader" Margin="0 0 0 8"/>
+        <TextBlock DockPanel.Dock="Top" Text="Loading history..."
+                   IsVisible="{Binding IsHistoryLoading}" Classes="ItemSubtitle" Margin="0 0 0 6"/>
+        <TextBlock DockPanel.Dock="Top" Text="{Binding HistoryEmptyMessage}"
+                   IsVisible="{Binding HistoryEmptyMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                   Classes="ItemSubtitle" Margin="0 0 0 6"/>
+
+        <ListBox ItemsSource="{Binding StudentHistory}">
+          <ListBox.ItemTemplate>
+            <DataTemplate x:DataType="vm:BorrowingDisplayItem">
+              <Border Classes="BorrowingCard">
+                <StackPanel>
+                  <TextBlock Text="{Binding EquipmentName}" Classes="ItemTitle"/>
+                  <TextBlock Text="{Binding DateBorrowed, StringFormat='Out: {0:MMM dd, yyyy}'}" Classes="ItemSubtitle"/>
+                  <TextBlock Text="{Binding ExpectedReturnDate, StringFormat='Due: {0:MMM dd, yyyy}'}" Classes="ItemSubtitle"/>
+                  <TextBlock Text="{Binding ReturnedDate, StringFormat='Returned: {0:MMM dd, yyyy}', TargetNullValue='Status: Active'}" Classes="ItemSubtitle"/>
+                </StackPanel>
+              </Border>
+            </DataTemplate>
+          </ListBox.ItemTemplate>
+        </ListBox>
+      </DockPanel>
+
+      <!-- Right: Register / Edit / Eligibility (UC-12, UC-13, UC-14) -->
+      <ScrollViewer Grid.Column="2">
+        <StackPanel Spacing="10">
+          <TextBlock Text="Register Student (UC-12)" Classes="SectionHeader"/>
+          <TextBox Watermark="Student Number (Required)" Text="{Binding NewStudentNumber}"/>
+          <TextBox Watermark="Full Name (Required)" Text="{Binding NewName}"/>
+          <TextBox Watermark="Contact Info (Optional)" Text="{Binding NewContactInfo}"/>
+          <Button Content="Register Student" Command="{Binding RegisterStudentCommand}"
+                  Classes="PrimaryButton" HorizontalAlignment="Stretch"/>
+
+          <Separator Margin="0 6"/>
+
+          <TextBlock Text="Edit Selected Student (UC-13)" Classes="SectionHeader"/>
+          <TextBox Watermark="Student Number" Text="{Binding EditStudentNumber}"/>
+          <TextBox Watermark="Full Name" Text="{Binding EditName}"/>
+          <TextBox Watermark="Contact Info (Blank clears)" Text="{Binding EditContactInfo}"/>
+          <Button Content="Save Changes" Command="{Binding UpdateStudentCommand}"
+                  Classes="PrimaryButton" HorizontalAlignment="Stretch"/>
+
+          <TextBlock Text="Borrowing Eligibility (UC-14)" Classes="FormLabel" Margin="0 6 0 0"/>
+          <Grid ColumnDefinitions="*,*">
+            <Button Grid.Column="0" Content="Permit" Command="{Binding PermitStudentCommand}"
+                    HorizontalAlignment="Stretch" Margin="0 0 4 0"/>
+            <Button Grid.Column="1" Content="Restrict" Command="{Binding RestrictStudentCommand}"
+                    HorizontalAlignment="Stretch" Margin="4 0 0 0"/>
+          </Grid>
+        </StackPanel>
+      </ScrollViewer>
+    </Grid>
+
+    <Border Grid.Row="1" Classes="StatusBar"
+            Classes.Success="{Binding IsSuccess}"
+            Classes.Error="{Binding !IsSuccess}"
+            IsVisible="{Binding StatusMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+      <TextBlock Text="{Binding StatusMessage}" Classes="StatusText" TextWrapping="Wrap"/>
+    </Border>
+  </Grid>
+</UserControl>

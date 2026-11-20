@@ -4,62 +4,81 @@
              x:Class="EquipmentBorrowing.Desktop.Views.BorrowingsView"
              x:DataType="vm:BorrowingsViewModel">
 
-  <Grid RowDefinitions="*,Auto" Margin="16">
+	<Grid RowDefinitions="Auto,*,Auto" Margin="16">
 
-    <Grid ColumnDefinitions="*,200" Margin="0 0 0 8">
+		<!-- Top: Search, Filter & Sort Controls (UC-09) -->
+		<WrapPanel Grid.Row="0" Orientation="Horizontal" Margin="0 0 0 12">
+			<TextBox Width="220" Watermark="Search student, number, or item..."
+					 Text="{Binding SearchText}" Margin="0 0 8 4"/>
+			<Button Content="Search" Command="{Binding LoadCommand}" Margin="0 0 8 4"/>
 
-      <!-- Active Borrowings List -->
-      <StackPanel Grid.Column="0" Margin="0 0 12 0">
-        <TextBlock Text="Active Borrowings" Classes="SectionHeader" Margin="0 0 0 8"/>
-        <ListBox ItemsSource="{Binding ActiveBorrowings}"
-                 SelectedItem="{Binding SelectedBorrowing}">
-          <ListBox.ItemTemplate>
-            <DataTemplate>
-              <Border Classes="BorrowingCard">
-                <Grid ColumnDefinitions="*,Auto">
-                  <StackPanel Grid.Column="0">
-                    <TextBlock Text="{Binding EquipmentName}" Classes="ItemTitle"/>
-                    <TextBlock Text="{Binding StudentName, StringFormat='Borrowed by: {0}'}"
-                               Classes="ItemSubtitle"/>
-                    <TextBlock Text="{Binding DateBorrowed, StringFormat='Borrowed: {0:MMM dd, yyyy}'}"
-                               Classes="ItemSubtitle"/>
-                    <TextBlock Text="{Binding ExpectedReturnDate, StringFormat='Return by: {0:MMM dd, yyyy}'}"
-                               Classes="ItemSubtitle"/>
-                  </StackPanel>
-                  <TextBlock Grid.Column="1" Text="{Binding BorrowingId, StringFormat='#{0}'}"
-                             Classes="ItemSubtitle" VerticalAlignment="Top"/>
-                </Grid>
-              </Border>
-            </DataTemplate>
-          </ListBox.ItemTemplate>
-        </ListBox>
-      </StackPanel>
+			<ComboBox SelectedIndex="{Binding StatusFilterIndex}" Width="120" Margin="0 0 8 4">
+				<ComboBoxItem Content="Active"/>
+				<ComboBoxItem Content="Returned"/>
+				<ComboBoxItem Content="All Statuses"/>
+			</ComboBox>
 
-      <!-- Return Panel -->
-      <StackPanel Grid.Column="1" Spacing="12" VerticalAlignment="Top">
-        <TextBlock Text="Return Equipment" Classes="SectionHeader"/>
-        <TextBlock Text="Select a borrowing from the list, then click Return."
-                   TextWrapping="Wrap" Classes="FormLabel"/>
-        <StackPanel Spacing="4">
-          <TextBlock Text="Selected" Classes="FormLabel"/>
-          <TextBlock Text="{Binding SelectedBorrowing.EquipmentName, FallbackValue='None selected'}"
-                     Classes="FormValue"/>
-        </StackPanel>
-        <Button Content="Return Equipment"
-                Command="{Binding ReturnCommand}"
-                Classes="PrimaryButton"
-                HorizontalAlignment="Stretch"/>
-      </StackPanel>
+			<ComboBox SelectedIndex="{Binding SortFieldIndex}" Width="165" Margin="0 0 8 4">
+				<ComboBoxItem Content="Sort: Checkout Date"/>
+				<ComboBoxItem Content="Sort: Due Date"/>
+			</ComboBox>
 
-    </Grid>
+			<CheckBox Content="Ascending" IsChecked="{Binding SortAscending}" Margin="0 0 8 4"/>
+			<Button Content="Reset" Command="{Binding ClearFiltersCommand}" Margin="0 0 0 4"/>
+		</WrapPanel>
 
-    <!-- Status Message -->
-    <Border Grid.Row="1" Classes="StatusBar"
-            Classes.Success="{Binding IsSuccess}"
-            Classes.Error="{Binding !IsSuccess}"
-            IsVisible="{Binding StatusMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
-      <TextBlock Text="{Binding StatusMessage}" Classes="StatusText"/>
-    </Border>
+		<Grid Grid.Row="1" ColumnDefinitions="*,220" Margin="0 0 0 8">
+			<DockPanel Grid.Column="0" Margin="0 0 12 0">
+				<TextBlock DockPanel.Dock="Top" Text="Borrowing Records" Classes="SectionHeader" Margin="0 0 0 8"/>
+				<TextBlock DockPanel.Dock="Top" Text="Loading borrowings..."
+						   IsVisible="{Binding IsLoading}" Classes="ItemSubtitle" Margin="0 0 0 6"/>
+				<TextBlock DockPanel.Dock="Top" Text="{Binding EmptyMessage}"
+						   IsVisible="{Binding EmptyMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+						   Classes="ItemSubtitle" Margin="0 0 0 6"/>
 
-  </Grid>
+				<ListBox ItemsSource="{Binding Borrowings}"
+						 SelectedItem="{Binding SelectedBorrowing}">
+					<ListBox.ItemTemplate>
+						<DataTemplate x:DataType="vm:BorrowingDisplayItem">
+							<Border Classes="BorrowingCard">
+								<Grid ColumnDefinitions="*,Auto">
+									<StackPanel Grid.Column="0">
+										<TextBlock Text="{Binding EquipmentName}" Classes="ItemTitle"/>
+										<TextBlock Text="{Binding StudentName, StringFormat='Student: {0}'}" Classes="ItemSubtitle"/>
+										<TextBlock Text="{Binding DateBorrowed, StringFormat='Checked Out: {0:MMM dd, yyyy}'}" Classes="ItemSubtitle"/>
+										<TextBlock Text="{Binding ExpectedReturnDate, StringFormat='Expected Return: {0:MMM dd, yyyy}'}" Classes="ItemSubtitle"/>
+										<TextBlock Text="{Binding ReturnedDate, StringFormat='Returned: {0:MMM dd, yyyy}', TargetNullValue='Status: Active'}" Classes="ItemSubtitle"/>
+									</StackPanel>
+									<TextBlock Grid.Column="1" Text="{Binding BorrowingId, StringFormat='#{0}'}"
+											   Classes="ItemSubtitle" VerticalAlignment="Top"/>
+								</Grid>
+							</Border>
+						</DataTemplate>
+					</ListBox.ItemTemplate>
+				</ListBox>
+			</DockPanel>
+
+			<StackPanel Grid.Column="1" Spacing="12" VerticalAlignment="Top">
+				<TextBlock Text="Return Equipment" Classes="SectionHeader"/>
+				<TextBlock Text="Select an active borrowing from the list, then click Return."
+						   TextWrapping="Wrap" Classes="FormLabel"/>
+				<StackPanel Spacing="4">
+					<TextBlock Text="Selected" Classes="FormLabel"/>
+					<TextBlock Text="{Binding SelectedBorrowing.EquipmentName, FallbackValue='None selected'}"
+							   Classes="FormValue"/>
+				</StackPanel>
+				<Button Content="Return Equipment"
+						Command="{Binding ReturnCommand}"
+						Classes="PrimaryButton"
+						HorizontalAlignment="Stretch"/>
+			</StackPanel>
+		</Grid>
+
+		<Border Grid.Row="2" Classes="StatusBar"
+				Classes.Success="{Binding IsSuccess}"
+				Classes.Error="{Binding !IsSuccess}"
+				IsVisible="{Binding StatusMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+			<TextBlock Text="{Binding StatusMessage}" Classes="StatusText" TextWrapping="Wrap"/>
+		</Border>
+	</Grid>
 </UserControl>

@@ -1,90 +1,120 @@
 ﻿<UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="using:EquipmentBorrowing.Desktop.ViewModels"
+             xmlns:domain="using:EquipmentBorrowing.Domain"
              x:Class="EquipmentBorrowing.Desktop.Views.EquipmentView"
              x:DataType="vm:EquipmentViewModel">
 
-  <Grid RowDefinitions="*,Auto" Margin="16">
+	<Grid RowDefinitions="*,Auto" Margin="16">
+		<Grid ColumnDefinitions="*,320" Margin="0 0 0 8">
 
-    <Grid ColumnDefinitions="*,280" Margin="0 0 0 8">
+			<!-- Left: Equipment Catalog -->
+			<DockPanel Grid.Column="0" Margin="0 0 12 0">
+				<Grid DockPanel.Dock="Top" ColumnDefinitions="*,Auto,Auto" Margin="0 0 0 8">
+					<TextBlock Grid.Column="0" Text="Equipment Catalog" Classes="SectionHeader"/>
+					<CheckBox Grid.Column="1" Content="Available Only"
+							  IsChecked="{Binding ShowAvailableOnly}" Margin="0 0 12 0"/>
+					<Button Grid.Column="2" Content="Refresh" Command="{Binding LoadCommand}"/>
+				</Grid>
 
-      <!-- Left: Equipment List -->
-      <DockPanel Grid.Column="0" Margin="0 0 12 0">
-        <TextBlock DockPanel.Dock="Top" Text="Available Equipment"
-                   Classes="SectionHeader" Margin="0 0 0 8"/>
-        <ListBox ItemsSource="{Binding EquipmentItems}"
-                 SelectedItem="{Binding SelectedEquipment}">
-          <ListBox.ItemTemplate>
-            <DataTemplate>
-              <Grid ColumnDefinitions="*,Auto" Margin="4">
-                <StackPanel Grid.Column="0">
-                  <TextBlock Text="{Binding Name}" Classes="ItemTitle"/>
-                  <TextBlock Text="{Binding Id, StringFormat='ID: {0}'}" Classes="ItemSubtitle"/>
-                </StackPanel>
-                <Border Grid.Column="1" VerticalAlignment="Center"
-                        Classes="StatusBadge"
-                        Classes.Available="{Binding IsAvailable}"
-                        Classes.Unavailable="{Binding !IsAvailable}">
-                  <Panel>
-                    <TextBlock Text="Available" Classes="BadgeText"
-                               IsVisible="{Binding IsAvailable}"/>
-                    <TextBlock Text="In Use" Classes="BadgeText"
-                               IsVisible="{Binding !IsAvailable}"/>
-                  </Panel>
-                </Border>
-              </Grid>
-            </DataTemplate>
-          </ListBox.ItemTemplate>
-        </ListBox>
-      </DockPanel>
+				<TextBlock DockPanel.Dock="Top" Text="Loading catalog..."
+						   IsVisible="{Binding IsLoading}" Classes="ItemSubtitle" Margin="0 0 0 6"/>
+				<TextBlock DockPanel.Dock="Top" Text="{Binding EmptyMessage}"
+						   IsVisible="{Binding EmptyMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+						   Classes="ItemSubtitle" Margin="0 0 0 6"/>
 
-      <!-- Right: Borrow Form -->
-      <DockPanel Grid.Column="1">
-        <TextBlock DockPanel.Dock="Top" Text="Borrow Equipment"
-                   Classes="SectionHeader" Margin="0 0 0 8"/>
-        <StackPanel Spacing="12">
+				<ListBox ItemsSource="{Binding EquipmentItems}"
+						 SelectedItem="{Binding SelectedEquipment}">
+					<ListBox.ItemTemplate>
+						<DataTemplate x:DataType="domain:Equipment">
+							<Grid ColumnDefinitions="*,Auto" Margin="4">
+								<StackPanel Grid.Column="0">
+									<TextBlock Text="{Binding Name}" Classes="ItemTitle"/>
+									<TextBlock Text="{Binding Identifier, StringFormat='Code: {0}'}" Classes="ItemSubtitle"/>
+									<TextBlock Text="{Binding Description}" Classes="ItemSubtitle"
+											   IsVisible="{Binding Description, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
+								</StackPanel>
+								<Border Grid.Column="1" VerticalAlignment="Center"
+										Classes="StatusBadge"
+										Classes.Available="{Binding IsAvailable}"
+										Classes.Unavailable="{Binding !IsAvailable}">
+									<Panel>
+										<TextBlock Text="Available" Classes="BadgeText" IsVisible="{Binding IsAvailable}"/>
+										<TextBlock Text="In Use" Classes="BadgeText" IsVisible="{Binding !IsAvailable}"/>
+									</Panel>
+								</Border>
+							</Grid>
+						</DataTemplate>
+					</ListBox.ItemTemplate>
+				</ListBox>
+			</DockPanel>
 
-          <StackPanel Spacing="4">
-            <TextBlock Text="Student" Classes="FormLabel"/>
-            <ComboBox ItemsSource="{Binding Students}"
-                      SelectedItem="{Binding SelectedStudent}"
-                      HorizontalAlignment="Stretch">
-              <ComboBox.ItemTemplate>
-                <DataTemplate>
-                  <TextBlock Text="{Binding Name}"/>
-                </DataTemplate>
-              </ComboBox.ItemTemplate>
-            </ComboBox>
-          </StackPanel>
+			<!-- Right: Single & Multi-Item Checkout -->
+			<ScrollViewer Grid.Column="1">
+				<StackPanel Spacing="10">
+					<TextBlock Text="Issue Equipment" Classes="SectionHeader"/>
 
-          <StackPanel Spacing="4">
-            <TextBlock Text="Selected Equipment" Classes="FormLabel"/>
-            <TextBlock Text="{Binding SelectedEquipment.Name, FallbackValue='None selected'}"
-                       Classes="FormValue"/>
-          </StackPanel>
+					<StackPanel Spacing="4">
+						<TextBlock Text="Student" Classes="FormLabel"/>
+						<ComboBox ItemsSource="{Binding Students}"
+								  SelectedItem="{Binding SelectedStudent}"
+								  HorizontalAlignment="Stretch">
+							<ComboBox.ItemTemplate>
+								<DataTemplate x:DataType="domain:Student">
+									<TextBlock Text="{Binding Name}"/>
+								</DataTemplate>
+							</ComboBox.ItemTemplate>
+						</ComboBox>
+					</StackPanel>
 
-          <StackPanel Spacing="4">
-            <TextBlock Text="Expected Return Date" Classes="FormLabel"/>
-            <CalendarDatePicker SelectedDate="{Binding ExpectedReturnDate}"
-                                HorizontalAlignment="Stretch"/>
-          </StackPanel>
+					<StackPanel Spacing="4">
+						<TextBlock Text="Expected Return Date" Classes="FormLabel"/>
+						<CalendarDatePicker SelectedDate="{Binding ExpectedReturnDate}" HorizontalAlignment="Stretch"/>
+					</StackPanel>
 
-          <Button Content="Borrow Equipment"
-                  Command="{Binding BorrowCommand}"
-                  Classes="PrimaryButton"
-                  HorizontalAlignment="Stretch"/>
-        </StackPanel>
-      </DockPanel>
+					<StackPanel Spacing="4">
+						<TextBlock Text="Single-Item Checkout (UC-03)" Classes="FormLabel"/>
+						<TextBlock Text="{Binding SelectedEquipment.Name, FallbackValue='None selected'}" Classes="FormValue"/>
+						<Button Content="Borrow Selected Item"
+								Command="{Binding BorrowCommand}"
+								Classes="PrimaryButton"
+								HorizontalAlignment="Stretch"/>
+					</StackPanel>
 
-    </Grid>
+					<Separator Margin="0 4"/>
 
-    <!-- Status Message -->
-    <Border Grid.Row="1" Classes="StatusBar"
-            Classes.Success="{Binding IsSuccess}"
-            Classes.Error="{Binding !IsSuccess}"
-            IsVisible="{Binding StatusMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
-      <TextBlock Text="{Binding StatusMessage}" Classes="StatusText"/>
-    </Border>
+					<StackPanel Spacing="6">
+						<TextBlock Text="Multi-Item Checkout (UC-06)" Classes="FormLabel"/>
+						<Grid ColumnDefinitions="*,Auto,Auto">
+							<Button Grid.Column="0" Content="Add Selected" Command="{Binding AddToCheckoutCommand}" HorizontalAlignment="Stretch"/>
+							<Button Grid.Column="1" Content="Remove" Command="{Binding RemoveFromCheckoutCommand}" Margin="4 0"/>
+							<Button Grid.Column="2" Content="Clear" Command="{Binding ClearCheckoutCommand}"/>
+						</Grid>
 
-  </Grid>
+						<ListBox ItemsSource="{Binding CheckoutCart}"
+								 SelectedItem="{Binding SelectedCartItem}"
+								 Height="120">
+							<ListBox.ItemTemplate>
+								<DataTemplate x:DataType="domain:Equipment">
+									<TextBlock Text="{Binding Name}"/>
+								</DataTemplate>
+							</ListBox.ItemTemplate>
+						</ListBox>
+
+						<Button Content="Checkout Multiple Items"
+								Command="{Binding CheckoutMultipleCommand}"
+								Classes="PrimaryButton"
+								HorizontalAlignment="Stretch"/>
+					</StackPanel>
+				</StackPanel>
+			</ScrollViewer>
+		</Grid>
+
+		<Border Grid.Row="1" Classes="StatusBar"
+				Classes.Success="{Binding IsSuccess}"
+				Classes.Error="{Binding !IsSuccess}"
+				IsVisible="{Binding StatusMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+			<TextBlock Text="{Binding StatusMessage}" Classes="StatusText" TextWrapping="Wrap"/>
+		</Border>
+	</Grid>
 </UserControl>

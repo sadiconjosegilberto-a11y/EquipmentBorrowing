@@ -1,0 +1,87 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:EquipmentBorrowing.Desktop.ViewModels"
+             xmlns:domain="using:EquipmentBorrowing.Domain"
+             x:Class="EquipmentBorrowing.Desktop.Views.EquipmentManagementView"
+             x:DataType="vm:EquipmentManagementViewModel">
+
+  <Grid RowDefinitions="*,Auto" Margin="16">
+    <Grid ColumnDefinitions="260,*,300" Margin="0 0 0 8">
+
+      <!-- Left: Equipment List -->
+      <DockPanel Grid.Column="0" Margin="0 0 12 0">
+        <Grid DockPanel.Dock="Top" ColumnDefinitions="*,Auto" Margin="0 0 0 8">
+          <TextBlock Grid.Column="0" Text="Equipment" Classes="SectionHeader"/>
+          <Button Grid.Column="1" Content="Refresh" Command="{Binding LoadCommand}"/>
+        </Grid>
+        <ListBox ItemsSource="{Binding EquipmentItems}" SelectedItem="{Binding SelectedEquipment}">
+          <ListBox.ItemTemplate>
+            <DataTemplate x:DataType="domain:Equipment">
+              <StackPanel Margin="2">
+                <TextBlock Text="{Binding Name}" Classes="ItemTitle"/>
+                <TextBlock Text="{Binding Identifier}" Classes="ItemSubtitle"/>
+                <TextBlock Text="Available" IsVisible="{Binding IsAvailable}" Classes="ItemSubtitle"/>
+                <TextBlock Text="In Use" IsVisible="{Binding !IsAvailable}" Classes="ItemSubtitle"/>
+              </StackPanel>
+            </DataTemplate>
+          </ListBox.ItemTemplate>
+        </ListBox>
+      </DockPanel>
+
+      <!-- Center: Selected Equipment History (UC-08) -->
+      <DockPanel Grid.Column="1" Margin="0 0 12 0">
+        <TextBlock DockPanel.Dock="Top" Text="Equipment Borrowing History (UC-08)" Classes="SectionHeader" Margin="0 0 0 8"/>
+        <TextBlock DockPanel.Dock="Top" Text="Loading history..."
+                   IsVisible="{Binding IsHistoryLoading}" Classes="ItemSubtitle" Margin="0 0 0 6"/>
+        <TextBlock DockPanel.Dock="Top" Text="{Binding HistoryEmptyMessage}"
+                   IsVisible="{Binding HistoryEmptyMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"
+                   Classes="ItemSubtitle" Margin="0 0 0 6"/>
+
+        <ListBox ItemsSource="{Binding EquipmentHistory}">
+          <ListBox.ItemTemplate>
+            <DataTemplate x:DataType="vm:BorrowingDisplayItem">
+              <Border Classes="BorrowingCard">
+                <StackPanel>
+                  <TextBlock Text="{Binding StudentName}" Classes="ItemTitle"/>
+                  <TextBlock Text="{Binding DateBorrowed, StringFormat='Out: {0:MMM dd, yyyy}'}" Classes="ItemSubtitle"/>
+                  <TextBlock Text="{Binding ExpectedReturnDate, StringFormat='Due: {0:MMM dd, yyyy}'}" Classes="ItemSubtitle"/>
+                  <TextBlock Text="{Binding ReturnedDate, StringFormat='Returned: {0:MMM dd, yyyy}', TargetNullValue='Status: Active'}" Classes="ItemSubtitle"/>
+                </StackPanel>
+              </Border>
+            </DataTemplate>
+          </ListBox.ItemTemplate>
+        </ListBox>
+      </DockPanel>
+
+      <!-- Right: Register & Update Equipment (UC-15, UC-16) -->
+      <ScrollViewer Grid.Column="2">
+        <StackPanel Spacing="10">
+          <TextBlock Text="Register Equipment (UC-15)" Classes="SectionHeader"/>
+          <TextBox Watermark="Equipment Identifier (Required)" Text="{Binding NewIdentifier}"/>
+          <TextBox Watermark="Equipment Name (Required)" Text="{Binding NewName}"/>
+          <TextBox Watermark="Description / Type (Optional)" Text="{Binding NewDescription}"/>
+          <Button Content="Register Equipment" Command="{Binding RegisterEquipmentCommand}"
+                  Classes="PrimaryButton" HorizontalAlignment="Stretch"/>
+
+          <Separator Margin="0 6"/>
+
+          <TextBlock Text="Edit Selected Equipment (UC-16)" Classes="SectionHeader"/>
+          <TextBox Watermark="Equipment Identifier" Text="{Binding EditIdentifier}"/>
+          <TextBox Watermark="Equipment Name" Text="{Binding EditName}"/>
+          <TextBox Watermark="Description (Blank clears)" Text="{Binding EditDescription}"/>
+          <TextBlock Text="{Binding SelectedEquipment.IsAvailable, StringFormat='Availability (Workflow-controlled): {0}', FallbackValue='Select an item'}"
+                     Classes="ItemSubtitle"/>
+          <Button Content="Save Changes" Command="{Binding UpdateEquipmentCommand}"
+                  Classes="PrimaryButton" HorizontalAlignment="Stretch"/>
+        </StackPanel>
+      </ScrollViewer>
+    </Grid>
+
+    <Border Grid.Row="1" Classes="StatusBar"
+            Classes.Success="{Binding IsSuccess}"
+            Classes.Error="{Binding !IsSuccess}"
+            IsVisible="{Binding StatusMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+      <TextBlock Text="{Binding StatusMessage}" Classes="StatusText" TextWrapping="Wrap"/>
+    </Border>
+  </Grid>
+</UserControl>
