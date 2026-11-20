@@ -30,6 +30,13 @@ public class ReturnEquipmentService
         _borrowingRepository = borrowingRepository;
     }
 
+    public ReturnEquipmentService(
+        IBorrowingRepository borrowingRepository,
+        IEquipmentRepository equipmentRepository)
+        : this(borrowingRepository)
+    {
+    }
+
     public async Task<ReturnEquipmentResult> ExecuteAsync(
         int borrowingId,
         CancellationToken cancellationToken = default)

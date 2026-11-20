@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore;
+using System;
 
 namespace EquipmentBorrowing.Application.Services;
 
@@ -6,16 +6,25 @@ internal static class PersistenceErrorHelper
 {
     public static (bool IsUnknownOutcome, string Message) Describe(Exception ex)
     {
-        if (ex is DbUpdateConcurrencyException)
+        var exceptionTypeName = ex.GetType().Name;
+
+        if (exceptionTypeName == "DbUpdateConcurrencyException")
             return (false, "The record was modified or removed by another operation. Refresh and try again.");
 
-        if (ex is DbUpdateException dbEx)
+        if (exceptionTypeName == "DbUpdateException")
         {
-            var inner = dbEx.InnerException?.Message ?? string.Empty;
-            if (inner.Contains("23505") || inner.Contains("unique", StringComparison.OrdinalIgnoreCase))
+            var inner = ex.InnerException;
+            var innerMessage = inner?.Message ?? string.Empty;
+            var sqlState = inner?.GetType().GetProperty("SqlState")?.GetValue(inner)?.ToString();
+
+            if (sqlState == "23505" ||
+                innerMessage.Contains("23505", StringComparison.Ordinal) ||
+                innerMessage.Contains("unique", StringComparison.OrdinalIgnoreCase))
                 return (false, "Operation rejected by database uniqueness or single-active-borrowing constraint.");
 
-            if (inner.Contains("23503") || inner.Contains("foreign key", StringComparison.OrdinalIgnoreCase))
+            if (sqlState == "23503" ||
+                innerMessage.Contains("23503", StringComparison.Ordinal) ||
+                innerMessage.Contains("foreign key", StringComparison.OrdinalIgnoreCase))
                 return (false, "Operation rejected because a referenced student or equipment record does not exist.");
 
             return (false, "Database rejected the update. No partial changes were saved.");

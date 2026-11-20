@@ -65,11 +65,12 @@ public partial class EquipmentViewModel : ObservableObject
                 ? (ShowAvailableOnly ? "No equipment items are currently available." : "No equipment registered in the catalog.")
                 : string.Empty;
         }
-        catch
+        catch (Exception ex)
         {
+            System.IO.File.WriteAllText("load_error.txt", ex.ToString());
             EquipmentItems.Clear();
             IsSuccess = false;
-            StatusMessage = "Unable to load catalog from PostgreSQL. Check connection and retry.";
+            StatusMessage = ex.InnerException?.Message ?? ex.Message;
         }
         finally
         {

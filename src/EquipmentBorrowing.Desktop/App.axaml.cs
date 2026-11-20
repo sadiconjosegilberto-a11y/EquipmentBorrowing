@@ -36,9 +36,9 @@ public partial class App : Avalonia.Application
             var dbContext = scope.ServiceProvider.GetRequiredService<EquipmentBorrowingDbContext>();
             dbContext.Database.Migrate();
         }
-        catch
+        catch (Exception ex)
         {
-            // Allow UI to launch and display connection errors when PostgreSQL is unreachable (BR-18/BR-19)
+            File.WriteAllText("migrate_error.txt", ex.ToString());
         }
 
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
@@ -70,9 +70,14 @@ public partial class App : Avalonia.Application
 
         services.AddTransient<BorrowEquipmentService>();
         services.AddTransient<ReturnEquipmentService>();
+        services.AddTransient<StudentManagementService>();
+        services.AddTransient<EquipmentManagementService>();
+        services.AddTransient<BorrowingQueryService>();
 
         services.AddTransient<EquipmentViewModel>();
         services.AddTransient<BorrowingsViewModel>();
+        services.AddTransient<StudentsViewModel>();
+        services.AddTransient<EquipmentManagementViewModel>();
         services.AddSingleton<MainWindowViewModel>();
     }
 }

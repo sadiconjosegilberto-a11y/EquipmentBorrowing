@@ -40,6 +40,14 @@ public class BorrowEquipmentService
         _borrowingRepository = borrowingRepository;
     }
 
+    public BorrowEquipmentService(
+        IStudentRepository studentRepository,
+        IEquipmentRepository equipmentRepository,
+        IBorrowingRepository borrowingRepository)
+        : this(borrowingRepository)
+    {
+    }
+
     public Task<BorrowEquipmentResult> ExecuteAsync(
         int studentId,
         int equipmentId,
