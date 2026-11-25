@@ -1,4 +1,5 @@
-﻿using Avalonia;
+﻿using System;
+using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 using EquipmentBorrowing.Application.Interfaces;
@@ -9,9 +10,6 @@ using EquipmentBorrowing.Infrastructure.Persistence;
 using EquipmentBorrowing.Infrastructure.Repositories;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
-using System;
-using System.IO;
 
 namespace EquipmentBorrowing.Desktop;
 
@@ -30,17 +28,6 @@ public partial class App : Avalonia.Application
         ConfigureServices(services);
         _services = services.BuildServiceProvider();
 
-        try
-        {
-            using var scope = _services.CreateScope();
-            var dbContext = scope.ServiceProvider.GetRequiredService<EquipmentBorrowingDbContext>();
-            dbContext.Database.Migrate();
-        }
-        catch (Exception ex)
-        {
-            File.WriteAllText("migrate_error.txt", ex.ToString());
-        }
-
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
             desktop.MainWindow = new MainWindow
@@ -58,11 +45,12 @@ public partial class App : Avalonia.Application
             ?? throw new InvalidOperationException(
                 "Set the EQUIPMENT_BORROWING_CONNECTION environment variable.");
 
-        services.AddDbContext<EquipmentBorrowingDbContext>(options =>
+        services.AddDbContextFactory<EquipmentBorrowingDbContext>(options =>
         {
             options.UseNpgsql(connectionString);
-            options.LogTo(message => File.AppendAllText("ef_sql.log", message), LogLevel.Information);
-        }, ServiceLifetime.Transient, ServiceLifetime.Transient);
+        });
+
+        services.AddSingleton<IDatabaseInitializer, PostgresDatabaseInitializer>();
 
         services.AddTransient<IStudentRepository, EfStudentRepository>();
         services.AddTransient<IEquipmentRepository, EfEquipmentRepository>();

@@ -1,3 +1,8 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using EquipmentBorrowing.Application.Interfaces;
 using EquipmentBorrowing.Domain;
 using EquipmentBorrowing.Infrastructure.Persistence;
@@ -7,23 +12,25 @@ namespace EquipmentBorrowing.Infrastructure.Repositories;
 
 public class EfStudentRepository : IStudentRepository
 {
-    private readonly EquipmentBorrowingDbContext _context;
+    private readonly IDbContextFactory<EquipmentBorrowingDbContext> _contextFactory;
 
-    public EfStudentRepository(EquipmentBorrowingDbContext context)
+    public EfStudentRepository(IDbContextFactory<EquipmentBorrowingDbContext> contextFactory)
     {
-        _context = context;
+        _contextFactory = contextFactory;
     }
 
     public async Task<Student?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
     {
-        return await _context.Students
+        await using var context = await _contextFactory.CreateDbContextAsync(cancellationToken);
+        return await context.Students
             .AsNoTracking()
             .FirstOrDefaultAsync(s => s.Id == id, cancellationToken);
     }
 
     public async Task<IReadOnlyList<Student>> GetAllAsync(CancellationToken cancellationToken = default)
     {
-        return await _context.Students
+        await using var context = await _contextFactory.CreateDbContextAsync(cancellationToken);
+        return await context.Students
             .AsNoTracking()
             .OrderBy(s => s.Name)
             .ThenBy(s => s.Id)
@@ -35,7 +42,8 @@ public class EfStudentRepository : IStudentRepository
         int? excludeStudentId = null,
         CancellationToken cancellationToken = default)
     {
-        return await _context.Students
+        await using var context = await _contextFactory.CreateDbContextAsync(cancellationToken);
+        return await context.Students
             .AsNoTracking()
             .AnyAsync(s => s.NormalizedStudentNumber == normalizedStudentNumber
                         && (!excludeStudentId.HasValue || s.Id != excludeStudentId.Value),
@@ -44,13 +52,23 @@ public class EfStudentRepository : IStudentRepository
 
     public async Task AddAsync(Student student, CancellationToken cancellationToken = default)
     {
-        await _context.Students.AddAsync(student, cancellationToken);
-        await _context.SaveChangesAsync(cancellationToken);
+        await using var context = await _contextFactory.CreateDbContextAsync(cancellationToken);
+        await context.Students.AddAsync(student, cancellationToken);
+        await context.SaveChangesAsync(cancellationToken);
     }
 
     public async Task UpdateAsync(Student student, CancellationToken cancellationToken = default)
     {
-        _context.Students.Update(student);
-        await _context.SaveChangesAsync(cancellationToken);
+        await using var context = await _contextFactory.CreateDbContextAsync(cancellationToken);
+        context.Students.Update(student);
+
+        try
+        {
+            await context.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            throw new InvalidOperationException("Selected student record no longer exists.");
+        }
     }
 }

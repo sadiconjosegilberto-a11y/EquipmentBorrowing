@@ -1,10 +1,12 @@
-﻿using System.Collections.ObjectModel;
+﻿using System;
+using System.Collections.ObjectModel;
+using System.Threading;
+using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using EquipmentBorrowing.Application.Interfaces;
 using EquipmentBorrowing.Application.Services;
 using EquipmentBorrowing.Domain;
-using System.Threading.Tasks;
 
 namespace EquipmentBorrowing.Desktop.ViewModels;
 
@@ -12,6 +14,7 @@ public partial class BorrowingsViewModel : ObservableObject
 {
     private readonly ReturnEquipmentService _returnService;
     private readonly BorrowingQueryService _queryService;
+    private CancellationTokenSource? _loadCts;
 
     public ObservableCollection<BorrowingDisplayItem> Borrowings { get; } = new();
 
@@ -40,6 +43,11 @@ public partial class BorrowingsViewModel : ObservableObject
     [RelayCommand]
     public async Task LoadAsync()
     {
+        _loadCts?.Cancel();
+        _loadCts?.Dispose();
+        _loadCts = new CancellationTokenSource();
+        var token = _loadCts.Token;
+
         IsLoading = true;
         EmptyMessage = string.Empty;
 
@@ -60,7 +68,11 @@ public partial class BorrowingsViewModel : ObservableObject
                 SearchText,
                 statusFilter,
                 sortField,
-                SortAscending);
+                SortAscending,
+                token);
+
+            if (token.IsCancellationRequested)
+                return;
 
             Borrowings.Clear();
             foreach (var b in records)
@@ -70,6 +82,10 @@ public partial class BorrowingsViewModel : ObservableObject
                 ? "No borrowing records match the current criteria."
                 : string.Empty;
         }
+        catch (OperationCanceledException)
+        {
+            // Superseded by a newer query.
+        }
         catch
         {
             Borrowings.Clear();
@@ -78,7 +94,8 @@ public partial class BorrowingsViewModel : ObservableObject
         }
         finally
         {
-            IsLoading = false;
+            if (!token.IsCancellationRequested)
+                IsLoading = false;
         }
     }
 

@@ -9,21 +9,22 @@
 		<!-- Top: Search, Filter & Sort Controls (UC-09) -->
 		<WrapPanel Grid.Row="0" Orientation="Horizontal" Margin="0 0 0 12">
 			<TextBox Width="220" Watermark="Search student, number, or item..."
-					 Text="{Binding SearchText}" Margin="0 0 8 4"/>
+					 Text="{Binding SearchText, Mode=TwoWay}" Margin="0 0 8 4"/>
 			<Button Content="Search" Command="{Binding LoadCommand}" Margin="0 0 8 4"/>
 
-			<ComboBox SelectedIndex="{Binding StatusFilterIndex}" Width="120" Margin="0 0 8 4">
+			<ComboBox SelectedIndex="{Binding StatusFilterIndex, Mode=TwoWay}" MinWidth="135" Margin="0 0 8 4">
 				<ComboBoxItem Content="Active"/>
 				<ComboBoxItem Content="Returned"/>
 				<ComboBoxItem Content="All Statuses"/>
 			</ComboBox>
 
-			<ComboBox SelectedIndex="{Binding SortFieldIndex}" Width="165" Margin="0 0 8 4">
+			<ComboBox SelectedIndex="{Binding SortFieldIndex, Mode=TwoWay}" MinWidth="195" Margin="0 0 8 4">
 				<ComboBoxItem Content="Sort: Checkout Date"/>
 				<ComboBoxItem Content="Sort: Due Date"/>
 			</ComboBox>
 
-			<CheckBox Content="Ascending" IsChecked="{Binding SortAscending}" Margin="0 0 8 4"/>
+			<CheckBox Content="Ascending" IsChecked="{Binding SortAscending, Mode=TwoWay}"
+					  VerticalAlignment="Center" Margin="0 0 8 4"/>
 			<Button Content="Reset" Command="{Binding ClearFiltersCommand}" Margin="0 0 0 4"/>
 		</WrapPanel>
 

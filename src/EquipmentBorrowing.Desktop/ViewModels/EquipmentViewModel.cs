@@ -1,11 +1,12 @@
-﻿using System.Collections.ObjectModel;
+﻿using System;
+using System.Collections.ObjectModel;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using EquipmentBorrowing.Application.Services;
 using EquipmentBorrowing.Domain;
-using System;
-using System.Threading.Tasks;
 
 namespace EquipmentBorrowing.Desktop.ViewModels;
 
@@ -13,6 +14,7 @@ public partial class EquipmentViewModel : ObservableObject
 {
     private readonly BorrowEquipmentService _borrowService;
     private readonly BorrowingQueryService _queryService;
+    private CancellationTokenSource? _loadCts;
 
     public ObservableCollection<Equipment> EquipmentItems { get; } = new();
     public ObservableCollection<Student> Students { get; } = new();
@@ -41,16 +43,24 @@ public partial class EquipmentViewModel : ObservableObject
     [RelayCommand]
     public async Task LoadAsync()
     {
+        _loadCts?.Cancel();
+        _loadCts?.Dispose();
+        _loadCts = new CancellationTokenSource();
+        var token = _loadCts.Token;
+
         IsLoading = true;
         EmptyMessage = string.Empty;
 
         try
         {
             var equipment = ShowAvailableOnly
-                ? await _queryService.GetAvailableEquipmentAsync()
-                : await _queryService.GetEquipmentCatalogAsync();
+                ? await _queryService.GetAvailableEquipmentAsync(token)
+                : await _queryService.GetEquipmentCatalogAsync(token);
 
-            var students = await _queryService.GetAllStudentsAsync();
+            var students = await _queryService.GetAllStudentsAsync(token);
+
+            if (token.IsCancellationRequested)
+                return;
 
             EquipmentItems.Clear();
             foreach (var e in equipment) EquipmentItems.Add(e);
@@ -65,16 +75,20 @@ public partial class EquipmentViewModel : ObservableObject
                 ? (ShowAvailableOnly ? "No equipment items are currently available." : "No equipment registered in the catalog.")
                 : string.Empty;
         }
-        catch (Exception ex)
+        catch (OperationCanceledException)
         {
-            System.IO.File.WriteAllText("load_error.txt", ex.ToString());
+            // Superseded by a newer load request.
+        }
+        catch
+        {
             EquipmentItems.Clear();
             IsSuccess = false;
-            StatusMessage = ex.InnerException?.Message ?? ex.Message;
+            StatusMessage = "Unable to retrieve catalog data from PostgreSQL. Check connection and retry.";
         }
         finally
         {
-            IsLoading = false;
+            if (!token.IsCancellationRequested)
+                IsLoading = false;
         }
     }
 

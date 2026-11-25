@@ -1,10 +1,12 @@
+using System;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using EquipmentBorrowing.Application.Services;
 using EquipmentBorrowing.Domain;
-using System.Threading.Tasks;
 
 namespace EquipmentBorrowing.Desktop.ViewModels;
 
@@ -12,6 +14,8 @@ public partial class StudentsViewModel : ObservableObject
 {
     private readonly StudentManagementService _studentService;
     private readonly BorrowingQueryService _queryService;
+    private CancellationTokenSource? _loadCts;
+    private CancellationTokenSource? _historyCts;
 
     public ObservableCollection<Student> Students { get; } = new();
     public ObservableCollection<BorrowingDisplayItem> StudentHistory { get; } = new();
@@ -28,6 +32,7 @@ public partial class StudentsViewModel : ObservableObject
     [ObservableProperty] private bool _isLoading;
     [ObservableProperty] private bool _isHistoryLoading;
     [ObservableProperty] private string _historyEmptyMessage = "Select a student to view borrowing history.";
+    [ObservableProperty] private string _historyErrorMessage = string.Empty;
     [ObservableProperty] private string _statusMessage = string.Empty;
     [ObservableProperty] private bool _isSuccess;
 
@@ -43,10 +48,12 @@ public partial class StudentsViewModel : ObservableObject
     {
         if (value is null)
         {
+            _historyCts?.Cancel();
             EditStudentNumber = string.Empty;
             EditName = string.Empty;
             EditContactInfo = string.Empty;
             StudentHistory.Clear();
+            HistoryErrorMessage = string.Empty;
             HistoryEmptyMessage = "Select a student to view borrowing history.";
             return;
         }
@@ -60,17 +67,29 @@ public partial class StudentsViewModel : ObservableObject
     [RelayCommand]
     public async Task LoadAsync()
     {
+        _loadCts?.Cancel();
+        _loadCts?.Dispose();
+        _loadCts = new CancellationTokenSource();
+        var token = _loadCts.Token;
+
         IsLoading = true;
         try
         {
             var selectedId = SelectedStudent?.Id;
-            var students = await _queryService.GetAllStudentsAsync();
+            var students = await _queryService.GetAllStudentsAsync(token);
+
+            if (token.IsCancellationRequested)
+                return;
 
             Students.Clear();
             foreach (var s in students) Students.Add(s);
 
             if (selectedId.HasValue)
                 SelectedStudent = Students.FirstOrDefault(s => s.Id == selectedId.Value);
+        }
+        catch (OperationCanceledException)
+        {
+            // Superseded by a newer refresh.
         }
         catch
         {
@@ -80,17 +99,29 @@ public partial class StudentsViewModel : ObservableObject
         }
         finally
         {
-            IsLoading = false;
+            if (!token.IsCancellationRequested)
+                IsLoading = false;
         }
     }
 
     private async Task LoadHistoryAsync(int studentId)
     {
+        _historyCts?.Cancel();
+        _historyCts?.Dispose();
+        _historyCts = new CancellationTokenSource();
+        var token = _historyCts.Token;
+
         IsHistoryLoading = true;
         HistoryEmptyMessage = string.Empty;
+        HistoryErrorMessage = string.Empty;
+
         try
         {
-            var history = await _queryService.GetStudentHistoryAsync(studentId);
+            var history = await _queryService.GetStudentHistoryAsync(studentId, token);
+
+            if (token.IsCancellationRequested)
+                return;
+
             StudentHistory.Clear();
             foreach (var b in history)
                 StudentHistory.Add(BorrowingDisplayItem.FromEntity(b));
@@ -99,14 +130,29 @@ public partial class StudentsViewModel : ObservableObject
                 ? "This student has no active or returned borrowing history."
                 : string.Empty;
         }
-        catch (System.Exception ex)
+        catch (OperationCanceledException)
+        {
+            // Superseded by selecting another student.
+        }
+        catch (InvalidOperationException ex)
         {
             StudentHistory.Clear();
-            HistoryEmptyMessage = ex.Message;
+            IsSuccess = false;
+            HistoryErrorMessage = ex.Message;
+            StatusMessage = ex.Message;
+        }
+        catch
+        {
+            StudentHistory.Clear();
+            IsSuccess = false;
+            const string msg = "Unable to load student borrowing history from PostgreSQL. Check connection and retry.";
+            HistoryErrorMessage = msg;
+            StatusMessage = msg;
         }
         finally
         {
-            IsHistoryLoading = false;
+            if (!token.IsCancellationRequested)
+                IsHistoryLoading = false;
         }
     }
 

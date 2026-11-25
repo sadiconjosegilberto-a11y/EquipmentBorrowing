@@ -1,3 +1,5 @@
+using System;
+
 namespace EquipmentBorrowing.Domain;
 
 public class Borrowing
@@ -22,14 +24,17 @@ public class Borrowing
 
     public Borrowing(int id, int studentId, int equipmentId, DateTime dateBorrowed, DateTime expectedReturnDate)
     {
-        if (expectedReturnDate.Date <= dateBorrowed.Date)
+        var normalizedBorrowDate = NormalizeDate(dateBorrowed);
+        var normalizedExpectedDate = NormalizeDate(expectedReturnDate);
+
+        if (normalizedExpectedDate <= normalizedBorrowDate)
             throw new ArgumentException("Expected return date must be later than checkout date.", nameof(expectedReturnDate));
 
         Id = id;
         StudentId = studentId;
         EquipmentId = equipmentId;
-        DateBorrowed = dateBorrowed.Date;
-        ExpectedReturnDate = expectedReturnDate.Date;
+        DateBorrowed = normalizedBorrowDate;
+        ExpectedReturnDate = normalizedExpectedDate;
         Status = BorrowingStatus.Active;
     }
 
@@ -40,10 +45,14 @@ public class Borrowing
         if (Status != BorrowingStatus.Active)
             throw new InvalidOperationException("Only an active borrowing may be returned.");
 
-        if (returnDate.Date < DateBorrowed.Date)
+        var normalizedReturnDate = NormalizeDate(returnDate);
+        if (normalizedReturnDate < DateBorrowed.Date)
             throw new ArgumentException("Actual return date cannot precede checkout date.", nameof(returnDate));
 
-        ReturnedDate = returnDate.Date;
+        ReturnedDate = normalizedReturnDate;
         Status = BorrowingStatus.Returned;
     }
+
+    private static DateTime NormalizeDate(DateTime value) =>
+        DateTime.SpecifyKind(value.Date, DateTimeKind.Unspecified);
 }

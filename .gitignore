@@ -2,3 +2,9 @@ bin/
 obj/
 .vs/
 *.user
+
+# Runtime logs and legacy SQLite files
+*.log
+*_error.txt
+*.db
+

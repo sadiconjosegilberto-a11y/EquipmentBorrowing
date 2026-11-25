@@ -1,10 +1,12 @@
+using System;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using EquipmentBorrowing.Application.Services;
 using EquipmentBorrowing.Domain;
-using System.Threading.Tasks;
 
 namespace EquipmentBorrowing.Desktop.ViewModels;
 
@@ -12,6 +14,8 @@ public partial class EquipmentManagementViewModel : ObservableObject
 {
     private readonly EquipmentManagementService _equipmentService;
     private readonly BorrowingQueryService _queryService;
+    private CancellationTokenSource? _loadCts;
+    private CancellationTokenSource? _historyCts;
 
     public ObservableCollection<Equipment> EquipmentItems { get; } = new();
     public ObservableCollection<BorrowingDisplayItem> EquipmentHistory { get; } = new();
@@ -28,6 +32,7 @@ public partial class EquipmentManagementViewModel : ObservableObject
     [ObservableProperty] private bool _isLoading;
     [ObservableProperty] private bool _isHistoryLoading;
     [ObservableProperty] private string _historyEmptyMessage = "Select an equipment item to view borrowing history.";
+    [ObservableProperty] private string _historyErrorMessage = string.Empty;
     [ObservableProperty] private string _statusMessage = string.Empty;
     [ObservableProperty] private bool _isSuccess;
 
@@ -43,10 +48,12 @@ public partial class EquipmentManagementViewModel : ObservableObject
     {
         if (value is null)
         {
+            _historyCts?.Cancel();
             EditIdentifier = string.Empty;
             EditName = string.Empty;
             EditDescription = string.Empty;
             EquipmentHistory.Clear();
+            HistoryErrorMessage = string.Empty;
             HistoryEmptyMessage = "Select an equipment item to view borrowing history.";
             return;
         }
@@ -60,17 +67,29 @@ public partial class EquipmentManagementViewModel : ObservableObject
     [RelayCommand]
     public async Task LoadAsync()
     {
+        _loadCts?.Cancel();
+        _loadCts?.Dispose();
+        _loadCts = new CancellationTokenSource();
+        var token = _loadCts.Token;
+
         IsLoading = true;
         try
         {
             var selectedId = SelectedEquipment?.Id;
-            var items = await _queryService.GetEquipmentCatalogAsync();
+            var items = await _queryService.GetEquipmentCatalogAsync(token);
+
+            if (token.IsCancellationRequested)
+                return;
 
             EquipmentItems.Clear();
             foreach (var e in items) EquipmentItems.Add(e);
 
             if (selectedId.HasValue)
                 SelectedEquipment = EquipmentItems.FirstOrDefault(e => e.Id == selectedId.Value);
+        }
+        catch (OperationCanceledException)
+        {
+            // Superseded by a newer refresh.
         }
         catch
         {
@@ -80,17 +99,29 @@ public partial class EquipmentManagementViewModel : ObservableObject
         }
         finally
         {
-            IsLoading = false;
+            if (!token.IsCancellationRequested)
+                IsLoading = false;
         }
     }
 
     private async Task LoadHistoryAsync(int equipmentId)
     {
+        _historyCts?.Cancel();
+        _historyCts?.Dispose();
+        _historyCts = new CancellationTokenSource();
+        var token = _historyCts.Token;
+
         IsHistoryLoading = true;
         HistoryEmptyMessage = string.Empty;
+        HistoryErrorMessage = string.Empty;
+
         try
         {
-            var history = await _queryService.GetEquipmentHistoryAsync(equipmentId);
+            var history = await _queryService.GetEquipmentHistoryAsync(equipmentId, token);
+
+            if (token.IsCancellationRequested)
+                return;
+
             EquipmentHistory.Clear();
             foreach (var b in history)
                 EquipmentHistory.Add(BorrowingDisplayItem.FromEntity(b));
@@ -99,14 +130,29 @@ public partial class EquipmentManagementViewModel : ObservableObject
                 ? "This equipment item has no active or returned borrowing history."
                 : string.Empty;
         }
-        catch (System.Exception ex)
+        catch (OperationCanceledException)
+        {
+            // Superseded by selecting another item.
+        }
+        catch (InvalidOperationException ex)
         {
             EquipmentHistory.Clear();
-            HistoryEmptyMessage = ex.Message;
+            IsSuccess = false;
+            HistoryErrorMessage = ex.Message;
+            StatusMessage = ex.Message;
+        }
+        catch
+        {
+            EquipmentHistory.Clear();
+            IsSuccess = false;
+            const string msg = "Unable to load equipment borrowing history from PostgreSQL. Check connection and retry.";
+            HistoryErrorMessage = msg;
+            StatusMessage = msg;
         }
         finally
         {
-            IsHistoryLoading = false;
+            if (!token.IsCancellationRequested)
+                IsHistoryLoading = false;
         }
     }
 

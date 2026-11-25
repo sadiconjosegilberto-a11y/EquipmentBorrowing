@@ -1,3 +1,8 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using EquipmentBorrowing.Application.Interfaces;
 using EquipmentBorrowing.Domain;
 using EquipmentBorrowing.Infrastructure.Persistence;
@@ -7,16 +12,17 @@ namespace EquipmentBorrowing.Infrastructure.Repositories;
 
 public class EfEquipmentRepository : IEquipmentRepository
 {
-    private readonly EquipmentBorrowingDbContext _context;
+    private readonly IDbContextFactory<EquipmentBorrowingDbContext> _contextFactory;
 
-    public EfEquipmentRepository(EquipmentBorrowingDbContext context)
+    public EfEquipmentRepository(IDbContextFactory<EquipmentBorrowingDbContext> contextFactory)
     {
-        _context = context;
+        _contextFactory = contextFactory;
     }
 
     public async Task<Equipment?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
     {
-        return await _context.Equipment
+        await using var context = await _contextFactory.CreateDbContextAsync(cancellationToken);
+        return await context.Equipment
             .AsNoTracking()
             .FirstOrDefaultAsync(e => e.Id == id, cancellationToken);
     }
@@ -26,7 +32,8 @@ public class EfEquipmentRepository : IEquipmentRepository
         CancellationToken cancellationToken = default)
     {
         var idList = ids.Distinct().ToList();
-        return await _context.Equipment
+        await using var context = await _contextFactory.CreateDbContextAsync(cancellationToken);
+        return await context.Equipment
             .AsNoTracking()
             .Where(e => idList.Contains(e.Id))
             .ToListAsync(cancellationToken);
@@ -34,7 +41,8 @@ public class EfEquipmentRepository : IEquipmentRepository
 
     public async Task<IReadOnlyList<Equipment>> GetAllAsync(CancellationToken cancellationToken = default)
     {
-        return await _context.Equipment
+        await using var context = await _contextFactory.CreateDbContextAsync(cancellationToken);
+        return await context.Equipment
             .AsNoTracking()
             .OrderBy(e => e.Name)
             .ThenBy(e => e.Id)
@@ -43,7 +51,8 @@ public class EfEquipmentRepository : IEquipmentRepository
 
     public async Task<IReadOnlyList<Equipment>> GetAvailableAsync(CancellationToken cancellationToken = default)
     {
-        return await _context.Equipment
+        await using var context = await _contextFactory.CreateDbContextAsync(cancellationToken);
+        return await context.Equipment
             .AsNoTracking()
             .Where(e => e.IsAvailable)
             .OrderBy(e => e.Name)
@@ -56,7 +65,8 @@ public class EfEquipmentRepository : IEquipmentRepository
         int? excludeEquipmentId = null,
         CancellationToken cancellationToken = default)
     {
-        return await _context.Equipment
+        await using var context = await _contextFactory.CreateDbContextAsync(cancellationToken);
+        return await context.Equipment
             .AsNoTracking()
             .AnyAsync(e => e.NormalizedIdentifier == normalizedIdentifier
                         && (!excludeEquipmentId.HasValue || e.Id != excludeEquipmentId.Value),
@@ -65,13 +75,23 @@ public class EfEquipmentRepository : IEquipmentRepository
 
     public async Task AddAsync(Equipment equipment, CancellationToken cancellationToken = default)
     {
-        await _context.Equipment.AddAsync(equipment, cancellationToken);
-        await _context.SaveChangesAsync(cancellationToken);
+        await using var context = await _contextFactory.CreateDbContextAsync(cancellationToken);
+        await context.Equipment.AddAsync(equipment, cancellationToken);
+        await context.SaveChangesAsync(cancellationToken);
     }
 
     public async Task UpdateAsync(Equipment equipment, CancellationToken cancellationToken = default)
     {
-        _context.Equipment.Update(equipment);
-        await _context.SaveChangesAsync(cancellationToken);
+        await using var context = await _contextFactory.CreateDbContextAsync(cancellationToken);
+        context.Equipment.Update(equipment);
+
+        try
+        {
+            await context.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            throw new InvalidOperationException("Selected equipment record no longer exists.");
+        }
     }
 }

@@ -1,3 +1,8 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using EquipmentBorrowing.Application.Interfaces;
 using EquipmentBorrowing.Domain;
 using EquipmentBorrowing.Infrastructure.Persistence;
@@ -7,29 +12,32 @@ namespace EquipmentBorrowing.Infrastructure.Repositories;
 
 public class EfBorrowingRepository : IBorrowingRepository
 {
-    private readonly EquipmentBorrowingDbContext _context;
+    private readonly IDbContextFactory<EquipmentBorrowingDbContext> _contextFactory;
 
-    public EfBorrowingRepository(EquipmentBorrowingDbContext context)
+    public EfBorrowingRepository(IDbContextFactory<EquipmentBorrowingDbContext> contextFactory)
     {
-        _context = context;
+        _contextFactory = contextFactory;
     }
 
     public async Task AddAsync(Borrowing borrowing, CancellationToken cancellationToken = default)
     {
-        await _context.Borrowings.AddAsync(borrowing, cancellationToken);
-        await _context.SaveChangesAsync(cancellationToken);
+        await using var context = await _contextFactory.CreateDbContextAsync(cancellationToken);
+        await context.Borrowings.AddAsync(borrowing, cancellationToken);
+        await context.SaveChangesAsync(cancellationToken);
     }
 
     public async Task<int> CountActiveByStudentIdAsync(int studentId, CancellationToken cancellationToken = default)
     {
-        return await _context.Borrowings
+        await using var context = await _contextFactory.CreateDbContextAsync(cancellationToken);
+        return await context.Borrowings
             .AsNoTracking()
             .CountAsync(b => b.StudentId == studentId && b.Status == BorrowingStatus.Active, cancellationToken);
     }
 
     public async Task<IReadOnlyList<Borrowing>> GetAllActiveAsync(CancellationToken cancellationToken = default)
     {
-        return await _context.Borrowings
+        await using var context = await _contextFactory.CreateDbContextAsync(cancellationToken);
+        return await context.Borrowings
             .AsNoTracking()
             .Include(b => b.Student)
             .Include(b => b.Equipment)
@@ -41,7 +49,8 @@ public class EfBorrowingRepository : IBorrowingRepository
 
     public async Task<Borrowing?> GetByIdAsync(int id, CancellationToken cancellationToken = default)
     {
-        return await _context.Borrowings
+        await using var context = await _contextFactory.CreateDbContextAsync(cancellationToken);
+        return await context.Borrowings
             .AsNoTracking()
             .Include(b => b.Student)
             .Include(b => b.Equipment)
@@ -50,13 +59,15 @@ public class EfBorrowingRepository : IBorrowingRepository
 
     public async Task UpdateAsync(Borrowing borrowing, CancellationToken cancellationToken = default)
     {
-        _context.Borrowings.Update(borrowing);
-        await _context.SaveChangesAsync(cancellationToken);
+        await using var context = await _contextFactory.CreateDbContextAsync(cancellationToken);
+        context.Borrowings.Update(borrowing);
+        await context.SaveChangesAsync(cancellationToken);
     }
 
     public async Task<IReadOnlyList<Borrowing>> GetByStudentIdAsync(int studentId, CancellationToken cancellationToken = default)
     {
-        return await _context.Borrowings
+        await using var context = await _contextFactory.CreateDbContextAsync(cancellationToken);
+        return await context.Borrowings
             .AsNoTracking()
             .Include(b => b.Student)
             .Include(b => b.Equipment)
@@ -68,7 +79,8 @@ public class EfBorrowingRepository : IBorrowingRepository
 
     public async Task<IReadOnlyList<Borrowing>> GetByEquipmentIdAsync(int equipmentId, CancellationToken cancellationToken = default)
     {
-        return await _context.Borrowings
+        await using var context = await _contextFactory.CreateDbContextAsync(cancellationToken);
+        return await context.Borrowings
             .AsNoTracking()
             .Include(b => b.Student)
             .Include(b => b.Equipment)
@@ -85,7 +97,8 @@ public class EfBorrowingRepository : IBorrowingRepository
         bool ascending,
         CancellationToken cancellationToken = default)
     {
-        var query = _context.Borrowings
+        await using var context = await _contextFactory.CreateDbContextAsync(cancellationToken);
+        var query = context.Borrowings
             .AsNoTracking()
             .Include(b => b.Student)
             .Include(b => b.Equipment)
@@ -125,16 +138,17 @@ public class EfBorrowingRepository : IBorrowingRepository
         Func<Task>? beforeCommitHook = null,
         CancellationToken cancellationToken = default)
     {
-        await using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
+        await using var context = await _contextFactory.CreateDbContextAsync(cancellationToken);
+        await using var transaction = await context.Database.BeginTransactionAsync(cancellationToken);
 
-        var student = await _context.Students
+        var student = await context.Students
             .FirstOrDefaultAsync(s => s.Id == studentId, cancellationToken)
             ?? throw new InvalidOperationException("Selected student does not exist.");
 
         if (!student.IsAllowedToBorrow)
             throw new InvalidOperationException("Selected student is restricted from borrowing.");
 
-        var activeCount = await _context.Borrowings
+        var activeCount = await context.Borrowings
             .CountAsync(b => b.StudentId == studentId && b.Status == BorrowingStatus.Active, cancellationToken);
 
         if (activeCount + equipmentIds.Count > 3)
@@ -144,14 +158,14 @@ public class EfBorrowingRepository : IBorrowingRepository
         if (distinctIds.Count != equipmentIds.Count)
             throw new InvalidOperationException("Duplicate equipment items are not permitted in a single checkout.");
 
-        var equipmentList = await _context.Equipment
+        var equipmentList = await context.Equipment
             .Where(e => distinctIds.Contains(e.Id))
             .ToListAsync(cancellationToken);
 
         if (equipmentList.Count != distinctIds.Count)
             throw new InvalidOperationException("One or more selected equipment items no longer exist.");
 
-        var activeEquipmentIds = await _context.Borrowings
+        var activeEquipmentIds = await context.Borrowings
             .Where(b => distinctIds.Contains(b.EquipmentId) && b.Status == BorrowingStatus.Active)
             .Select(b => b.EquipmentId)
             .ToListAsync(cancellationToken);
@@ -164,11 +178,11 @@ public class EfBorrowingRepository : IBorrowingRepository
         {
             var borrowing = new Borrowing(studentId, equipment.Id, checkoutDate, expectedReturnDate);
             equipment.MarkBorrowed();
-            await _context.Borrowings.AddAsync(borrowing, cancellationToken);
+            await context.Borrowings.AddAsync(borrowing, cancellationToken);
             createdBorrowings.Add(borrowing);
         }
 
-        await _context.SaveChangesAsync(cancellationToken);
+        await context.SaveChangesAsync(cancellationToken);
 
         if (beforeCommitHook is not null)
         {
@@ -184,23 +198,24 @@ public class EfBorrowingRepository : IBorrowingRepository
         DateTime returnDate,
         CancellationToken cancellationToken = default)
     {
-        await using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
+        await using var context = await _contextFactory.CreateDbContextAsync(cancellationToken);
+        await using var transaction = await context.Database.BeginTransactionAsync(cancellationToken);
 
-        var borrowing = await _context.Borrowings
+        var borrowing = await context.Borrowings
             .FirstOrDefaultAsync(b => b.Id == borrowingId, cancellationToken)
             ?? throw new InvalidOperationException("Selected borrowing record does not exist.");
 
         if (borrowing.Status != BorrowingStatus.Active)
             throw new InvalidOperationException("Selected borrowing has already been returned.");
 
-        var equipment = await _context.Equipment
+        var equipment = await context.Equipment
             .FirstOrDefaultAsync(e => e.Id == borrowing.EquipmentId, cancellationToken)
             ?? throw new InvalidOperationException("Associated equipment record does not exist.");
 
         borrowing.MarkReturned(returnDate);
         equipment.MarkReturned();
 
-        await _context.SaveChangesAsync(cancellationToken);
+        await context.SaveChangesAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);
     }
 }
